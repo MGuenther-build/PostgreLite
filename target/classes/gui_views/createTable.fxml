@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import java.lang.String?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml"
+			xmlns="http://javafx.com/javafx"
+            fx:controller="controller.CreateTableController"
+            stylesheets="@/css/styles.css"
+            >
+    
+    <top>
+        <VBox spacing="20" alignment="CENTER">
+            <Label text="Tabelle erstellen" styleClass="banner" BorderPane.alignment="CENTER"/>
+            	<HBox spacing="40"></HBox>
+        </VBox>
+    </top>
+
+    <center>
+    	<VBox spacing="20" styleClass="config-header">
+    		<HBox spacing="20" styleClass="config-header" alignment="CENTER">
+	    		<Label text="1. Datenbank auswählen:"/>
+    			<ComboBox fx:id="databaseComboBox" onAction="#onDatabaseSelected" promptText="Bitte Datenbank wählen" prefWidth="250"/>
+     			<Label text="2. Tabellenname erstellen:"/>
+         		<TextField fx:id="tableNameField" promptText="z.B. Kunden" prefWidth="250"/>
+         		<Button fx:id="showTables" text="vorhandene Tabellen" styleClass="button_tableview" onAction="#showTables"/>
+            </HBox>
+            
+            <HBox spacing="20" alignment="CENTER">
+			    <Label text="Spalte hinzufügen:"/>
+			    <TextField fx:id="columnNameField" promptText="Spaltenname"/>
+			    <ComboBox fx:id="dataTypeComboBox" promptText="-- Datentyp --"/>
+			    <TextField fx:id="typeParameterField" promptText="Parameter eingeben" disable="true"/>
+			    <CheckBox fx:id="primaryKeyCheckBox" text="PK">
+				    <tooltip>
+				        <Tooltip text="Primary Key" style="-fx-font-size: 12pt;"/>
+				    </tooltip>
+				</CheckBox>
+			    <CheckBox fx:id="notNullCheckBox" text="NN">
+				    <tooltip>
+				        <Tooltip text="Not Null" style="-fx-font-size: 12pt;"/>
+				    </tooltip>
+				</CheckBox>
+			    <CheckBox fx:id="uniqueCheckBox" text="UN">
+				    <tooltip>
+				        <Tooltip text="Unique" style="-fx-font-size: 12pt;"/>
+				    </tooltip>
+				</CheckBox>
+			    <TextField fx:id="defaultValueField" promptText="Default Value"/>
+			    <TextField fx:id="checkConstraintField" promptText="Constraint"/>
+			    <TextField fx:id="OptionsField" promptText="Weitere Optionen"/>
+			</HBox>
+			
+            <HBox spacing="40" alignment="CENTER">
+	        	<Button fx:id="addColumnButton" text="Spalte hinzufügen" styleClass="config-buttons" onAction="#addColumn"/>
+	           	<Button fx:id="ExpertModeButton" styleClass="button_expert" text="Expertenmodus" onAction="#ExpertMode">
+					<tooltip>
+					 	<Tooltip text="Freie Befehlseingabe"/>
+					</tooltip>
+				</Button>
+				<Button fx:id="createTableButton" text="Tabelle erstellen" styleClass="button_createtable" onAction="#createTable"/>
+	      	</HBox>
+				
+	            <HBox fx:id="expertBox" spacing="40" alignment="CENTER" visible="false" managed="false">
+	    			<Button text="Befehl ausführen" onAction="#executeExpertSQL" styleClass="button_createtable" visible="false" managed="false"
+	    					fx:id="executeExpertSQLButton"/>
+				</HBox>
+	
+	            <HBox spacing="20" alignment="CENTER">
+	            	<TableView fx:id="columnTableView" prefHeight="275" prefWidth="1200" styleClass="tablebuild-form">
+					    <columns>
+					        <TableColumn fx:id="columnNameColumn" text="Spaltenname" prefWidth="200"/>
+					        <TableColumn fx:id="dataTypeColumn" text="Datentyp" prefWidth="150"/>
+					        <TableColumn fx:id="notNullColumn" text="Not Null" prefWidth="50"/>
+					        <TableColumn fx:id="primaryKeyColumn" text="Primary Key" prefWidth="50"/>
+					        <TableColumn fx:id="uniqueColumn" text="Unique" prefWidth="50"/>
+					        <TableColumn fx:id="defaultValueColumn" text="Default" prefWidth="150"/>
+					        <TableColumn fx:id="checkConstraintColumn" text="Constraint" prefWidth="150"/>
+					        <TableColumn fx:id="optionsColumn" text="Optionen" prefWidth="150"/>
+					    </columns>
+					</TableView>
+	            </HBox>
+        </VBox>
+    </center>
+
+    <bottom>
+        <HBox alignment="CENTER" styleClass="bottom">
+            <Button text="zurück zum Dashboard" onAction="#backToMain"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

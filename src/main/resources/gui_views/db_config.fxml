@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import java.lang.String?>
+
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="controller.DBConfigController"
+            stylesheets="@/css/styles.css"
+            >
+            
+    		<top>
+    			<HBox spacing="10" styleClass="config-header">
+        			<Label text="Datenbankverbindung herstellen"/>
+        		</HBox>
+    		</top>
+
+    		<center>
+        		<VBox spacing="10" alignment="CENTER" styleClass="config-form">
+            		<TextField fx:id="hostField" promptText="Host (z.B. localhost)"/>
+            		<TextField fx:id="portField" promptText="Port (meist 5432)"/>
+            		<TextField fx:id="userField" promptText="Benutzername"/>
+            		<PasswordField fx:id="passwordField" promptText="Passwort"/>
+        		</VBox>
+    		</center>
+
+    		<bottom>
+        		<HBox spacing="40" alignment="CENTER_RIGHT" styleClass="config-buttons">
+            		<Button text="Verbinden" onAction="#FirstConnect"></Button>
+           			<Button text="Abbrechen" onAction="#AbortConnect"></Button>
+        		</HBox>
+    		</bottom>
+</BorderPane>

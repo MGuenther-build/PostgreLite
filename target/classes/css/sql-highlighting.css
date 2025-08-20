@@ -1,0 +1,21 @@
+
+.keyword {
+    -fx-fill: #426AE3;
+    -fx-font-weight: bold;
+}
+
+
+.string {
+    -fx-fill: green;
+}
+
+
+.comment {
+    -fx-fill: gray;
+    -fx-font-style: italic;
+}
+
+
+.function {
+    -fx-fill: purple;
+}
