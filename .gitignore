@@ -1,5 +1,28 @@
->> *.log
->> *.class
->> .idea/
->> *.iml
->> .DS_Store
+.classpath
+.project
+.settings/
+
+# Build
+/target/
+/build/
+/out/
+
+# IDE 
+/.idea/
+/.vscode/
+/Settings/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Compiled class files
+*.class
+
+# Temporary files
+*.tmp
+*.swp
+*.bak
