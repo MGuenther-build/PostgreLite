@@ -18,7 +18,7 @@
             <Button fx:id="executeSQLButton" text="SQL ausführen" onAction="#executeSQL"/>
             <Button fx:id="importExcelButton" text="Excel importieren" onAction="#importExcel"/>
             <Button fx:id="exportButton" text="Exportieren" onAction="#exportExcelOrCSV"/>
-            <ProgressBar fx:id="progressBar" prefWidth="300" progress="0.0" visible="false"/>
+            <Button text="zurück zum Dashboard" onAction="#backToMain"/>
         </HBox>
     </top>
 
@@ -36,7 +36,12 @@
             <Label text="Ergebnisse:" style="-fx-font-weight: bold;"/>
             <TableView fx:id="resultTable"/>
             <Label fx:id="infoLabel" text="" style="-fx-text-fill: red;"/>
-            <Button text="zurück zum Dashboard" onAction="#backToMain"/>
+            <TitledPane fx:id="historyBoard" text="SQL-History" expanded="false">
+        		<content>
+            		<TableView fx:id="sqlHistory" prefHeight="200"/>
+        		</content>
+    		</TitledPane>
+    		<ProgressBar fx:id="progressBar" prefWidth="300" progress="0.0" visible="false"/>
         </VBox>
     </bottom>
 

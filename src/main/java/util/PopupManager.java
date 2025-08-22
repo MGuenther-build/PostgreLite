@@ -95,15 +95,15 @@ public class PopupManager {
         Text header4 = new Text("Datenabfrage\n");
         header4.setStyle("-fx-underline: true; -fx-font-weight: bold; -fx-font-size: 18px; -fx-fill: black;");
 
-        Text body4 = new Text("In diesem Bereich können Sie aus den Datenbanken Ihre Datenbank wählen, die in ihr vorhandenen Tabellen einsehen und anschließend freihändig fast jede Art von Datenabfrage und Datenbearbeitung durchführen. Es ist in diesem Bereich nicht möglich Strukturbefehle wie Delete, Drop und Truncate durchzuführen!\n\n"
+        Text body4 = new Text("In diesem Bereich können Sie aus den Datenbanken Ihre Datenbank wählen, die in ihr vorhandenen Tabellen einsehen und anschließend freihändig fast jede Art von Datenabfrage und Datenbearbeitung durchführen. Es ist in diesem Bereich nicht möglich Strukturbefehle wie Delete, Drop und Truncate durchzuführen oder Nutzer anlegen bzw. Nutzerrechte auszusprechen. Dafür bitte den Adminbereich nutzen!\n\n"
                 + "Bitte beachten Sie, dass aus Sicherheitsgründen (SQL-Injektion!) Befehle ohne \";\" (= Semikolon) zu beenden sind.\n\n"
         		+"Ein Import von Excel ist möglich.\n\n");
         body4.setStyle("-fx-font-size: 16px; -fx-fill: black;");
 
-        Text header5 = new Text("Löschzentrum\n");
+        Text header5 = new Text("Adminbereich\n");
         header5.setStyle("-fx-underline: true; -fx-font-weight: bold; -fx-font-size: 18px; -fx-fill: black;");
 
-        Text body5 = new Text("Das Löschzentrum ist der sensibelste Bereich und sollte nur genutzt werden, wenn man weiß, was man tut. In diesem besonderen Bereich gibt es keine Verbote. Hier kann man in die Struktur einer Datenbank eindringen und z.B. Drop-, Truncate- und Delete-Befehle ausführen.\n\n");
+        Text body5 = new Text("Der Adminbereich ist der sensibelste Bereich und sollte nur genutzt werden, wenn man weiß, was man tut. In diesem besonderen Bereich gibt es keine Verbote. Hier kann man in die Struktur einer Datenbank eindringen und z.B. Drop-, Truncate- und Delete-Befehle ausführen, sowie Nutzer erstellen und Rechte erstellen.\n\n");
         body5.setStyle("-fx-underline: true; -fx-font-size: 16px; -fx-fill: black;");
 
         Text header6 = new Text("Verbindungsstatus anzeigen\n");
@@ -126,10 +126,10 @@ public class PopupManager {
         body8.setStyle("-fx-font-size: 16px; -fx-fill: black;");
 
         Text header9 = new Text("Schlussanmerkung\n");
-        header8.setStyle("-fx-underline: true; -fx-font-weight: bold; -fx-font-size: 18px; -fx-fill: black;");
+        header9.setStyle("-fx-underline: true; -fx-font-weight: bold; -fx-font-size: 18px; -fx-fill: black;");
 
         Text body9 = new Text("Diese App ist optimiert für Bildschirmauflösungen ab 1920 x 1080 Pixel. Sie ist für die Handynutzung nicht geeignet!\n\n");
-        body8.setStyle("-fx-font-size: 16px; -fx-fill: black;");
+        body9.setStyle("-fx-font-size: 16px; -fx-fill: black;");
 
         TextFlow textFlow = new TextFlow(
         		header1, body1,

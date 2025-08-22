@@ -2,9 +2,12 @@ package util;
 
 public class QuerySecurity {
 
-    private static final String[] FORBIDDEN = {
-        "DELETE", "DROP", "TRUNCATE", "CREATE DATABASE"
-    };
+	private static final String[] FORBIDDEN = {
+		    "DELETE", "DROP", "TRUNCATE", "CREATE DATABASE",
+		    "CREATE USER", "CREATE ROLE",
+		    "ALTER USER", "ALTER ROLE",
+		    "GRANT", "REVOKE"
+		};
 
     public static String harmonizeSQL(String sql) {
         if (sql == null)
@@ -31,8 +34,8 @@ public class QuerySecurity {
             return "Mehrfach-Statements sind nicht erlaubt!";
 
         for (String keyword : FORBIDDEN) {
-            if (cleaned.startsWith(keyword)) {
-                return "Befehl '" + keyword + "' ist nicht erlaubt!";
+            if (cleaned.contains(keyword)) {
+                return "Befehl '" + keyword + "' ist nur im Adminbereich erlaubt!";
             }
         }
 

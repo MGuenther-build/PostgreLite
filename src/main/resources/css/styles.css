@@ -160,16 +160,16 @@
 
 
 
-.button_delstation {
+.button_admin {
 	-fx-background-color: linear-gradient(to bottom, #241B1B, #000000);
 	-fx-text-fill: white;
 	-fx-font-size: 1.5em;
 }
-.button_delstation:hover {
+.button_admin:hover {
     -fx-background-color: #000000;
     -fx-opacity: 0.9;
 }
-.button_delstation:pressed {
+.button_admin:pressed {
     -fx-scale-x: 0.96;
     -fx-scale-y: 0.96;
     -fx-translate-y: 2px;

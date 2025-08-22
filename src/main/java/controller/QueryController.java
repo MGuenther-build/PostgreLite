@@ -19,10 +19,15 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
+import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TitledPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.util.Callback;
 import javafx.util.Duration;
 import service.Database;
 import service.Query;
@@ -56,6 +61,10 @@ public class QueryController {
     private ProgressBar progressBar;
     @FXML
     private Label infoLabel;
+    @FXML
+    private TableView<String> sqlHistory;
+    @FXML
+    private TitledPane historyBoard;
 
     
     
@@ -64,6 +73,9 @@ public class QueryController {
     private final Database databaseService = new Database();
     
     private final Query queryService = new Query();
+    
+    private final ObservableList<String> queryHistory = FXCollections.observableArrayList();
+
 
     @FXML
     public void initialize() {
@@ -81,6 +93,27 @@ public class QueryController {
         });
 
         updateDatabaseList();
+        
+        TableColumn<String, String> queryColumn = new TableColumn<>("SQL-Abfrage");
+        queryColumn.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue()));
+        queryColumn.setPrefWidth(400);
+
+        resultTable.setPlaceholder(new Label ("noch keine Daten vorhanden"));
+        sqlHistory.setPlaceholder(new Label ("noch keine Abfragen in dieser Session"));
+        sqlHistory.getColumns().add(queryColumn);
+        addDeleteColumnSQLHistory();
+        sqlHistory.setItems(queryHistory);
+
+        // Doppelklick zum Wiederverwenden
+        sqlHistory.setRowFactory(tv -> {
+            TableRow<String> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) {
+                    queryCodeArea.replaceText(row.getItem());
+                }
+            });
+            return row;
+        });
     }
 
     private void updateDatabaseList() {
@@ -122,14 +155,23 @@ public class QueryController {
                 if (results.isEmpty()) {
                     showInfo("Info", "Keine Ergebnisse gefunden.");
                 }
+                historyBoard.setExpanded(false);
+                
             } else {
                 int updateCount = queryService.executeUpdate(database, sql);
                 showInfo("Erfolg", updateCount + " Zeilen betroffen.");
                 resultTable.getColumns().clear();
                 resultTable.getItems().clear();
+                historyBoard.setExpanded(false);
             }
+            
         } catch (SQLException e) {
             showError("SQL-Fehler", e.getMessage());
+        }
+        
+        if (!sql.isBlank() && !queryHistory.contains(sql)) {
+            queryHistory.add(sql);
+            historyBoard.setExpanded(true);
         }
     }
 
@@ -167,6 +209,40 @@ public class QueryController {
         resultTable.setItems(data);
         autoResizeColumns();
     }
+    
+    
+    
+    private void addDeleteColumnSQLHistory() {
+        boolean exists = sqlHistory.getColumns().stream()
+            .anyMatch(col -> "Löschen".equals(col.getText()));
+        if (exists) return;
+
+        TableColumn<String, Void> deleteColumn = new TableColumn<>("Löschen");
+
+        Callback<TableColumn<String, Void>, TableCell<String, Void>> cellFactory = param -> new TableCell<String, Void>() {
+            private final Button deleteButton = new Button("X");
+
+            {
+                deleteButton.setOnAction(event -> {
+                    String item = getTableView().getItems().get(getIndex());
+                    getTableView().getItems().remove(item);
+                });
+                deleteButton.getStyleClass().add("delete-button");
+            }
+
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                setGraphic(empty ? null : new StackPane(deleteButton));
+            }
+        };
+        deleteColumn.setCellFactory(cellFactory);
+        deleteColumn.setPrefWidth(55);
+        deleteColumn.setStyle("-fx-alignment: CENTER;");
+        sqlHistory.getColumns().add(deleteColumn);
+    }
+    
+    
     
     @FXML
     public void importExcel() {
@@ -316,6 +392,11 @@ public class QueryController {
         
         if (file == null)
         	return;
+        
+        if (resultTable.getItems().isEmpty()) {
+            showWarning("Kein Inhalt", "Es gibt keine Daten zu exportieren!");
+            return;
+        }
 
         try {
             List<String> headers = resultTable.getColumns().stream()
@@ -348,6 +429,11 @@ public class QueryController {
     }
 
     
+    @FXML
+    private void toggleHistory() {
+        historyBoard.setExpanded(!historyBoard.isExpanded());
+    }
+    
     
     private void autoResizeColumns() {
         for (TableColumn<?, ?> column : resultTable.getColumns()) {
@@ -356,12 +442,10 @@ public class QueryController {
     }
 
     
-    
     @FXML
     public void backToMain() {
         ViewSwitcher.switchTo("/gui_views/start.fxml");
     }
-
     
     
     private void showError(String title, String message) {
@@ -379,11 +463,9 @@ public class QueryController {
         infoLabel.setText("" + title + ": " + message);
         infoLabel.setStyle("-fx-text-fill: orange;");
     }
-    
     private void resetInfos() {
         clearInfos();
     }
-    
     private void clearInfos() {
         FadeTransition fade = new FadeTransition(Duration.seconds(2), infoLabel);
         fade.setFromValue(1.0);

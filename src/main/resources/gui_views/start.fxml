@@ -23,7 +23,7 @@
 					<Button text="Verbindungsstatus anzeigen" styleClass="button_status" onAction="#ShowConnectionStatus"/>
 					<Button text="Infos zur App" styleClass="button_about" onAction="#ShowAbout"/>
 					<Region prefHeight="20" />
-					<Button text="Löschzentrum" styleClass="button_delstation" onAction="#ShowConnectionStatus"/>
+					<Button text="Adminbereich" styleClass="button_admin" onAction="#ShowConnectionStatus"/>
 				</VBox>	
 			</right>
 			
