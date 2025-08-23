@@ -10,6 +10,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableColumn;
@@ -92,7 +94,7 @@ public class PopupManager {
                 + "Bitte bedenken Sie, dass Tabellen, die Sie mit einem Großbuchstaben am Anfang erstellt haben, bei der Abfrage in doppelte Anführungsstriche gesetzt werden müssen. Postgre ist da besonders streng und wandelt sog. unquoted Bezeichner konsequent in Kleinbuchstaben um! Man kann das ganz elegant damit umgehen, indem man Tabellennamen grundsätzlich kleinschreibt.\n\n");
         body3.setStyle("-fx-font-size: 16px; -fx-fill: black;");
 
-        Text header4 = new Text("Datenabfrage\n");
+        Text header4 = new Text("QueryTool\n");
         header4.setStyle("-fx-underline: true; -fx-font-weight: bold; -fx-font-size: 18px; -fx-fill: black;");
 
         Text body4 = new Text("In diesem Bereich können Sie aus den Datenbanken Ihre Datenbank wählen, die in ihr vorhandenen Tabellen einsehen und anschließend freihändig fast jede Art von Datenabfrage und Datenbearbeitung durchführen. Es ist in diesem Bereich nicht möglich Strukturbefehle wie Delete, Drop und Truncate durchzuführen oder Nutzer anlegen bzw. Nutzerrechte auszusprechen. Dafür bitte den Adminbereich nutzen!\n\n"
@@ -225,6 +227,28 @@ public class PopupManager {
         popup.setResizable(false);
         popup.showAndWait();
         popup.centerOnScreen();
+    }
+    
+    
+    
+    public static void openAdminZone() {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle("Adminbereich");
+        alert.setHeaderText("⚠ Vorsicht: Gefährliche Zone!");
+        alert.setContentText(
+            "Im Adminbereich ist jeder Befehl erlaubt. Es gibt hier keine Hilfen!\n" +
+            "Alles, was Sie hier ausführen, kann nicht rückgängig gemacht werden.\n\n" +
+            "Verwenden Sie dieses Tool nur, wenn Sie genau wissen, was Sie tun."
+        );
+
+        ButtonType okButton = new ButtonType("Ok, verstanden");
+        ButtonType cancelButton = new ButtonType("Abbrechen", ButtonBar.ButtonData.CANCEL_CLOSE);
+        alert.getButtonTypes().setAll(okButton, cancelButton);
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == okButton) {
+            ViewSwitcher.switchTo("/gui_views/adminZone.fxml");
+        }
     }
 
 

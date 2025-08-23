@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17.0.2"
+      xmlns:fx="http://javafx.com/fxml"
+      fx:controller="controller.AdminController"
+      spacing="10" style="-fx-background-color: #1e1e1e;">
+
+    <HBox spacing="10" alignment="CENTER">
+        <Button text="Clear Console" fx:id="clearConsoleButton" onAction="#clearConsole"
+                style="-fx-font-family: Consolas; -fx-font-size: 12; -fx-min-width: 120;"/>
+        <Button text="Show History" onAction="#showHistory"
+                style="-fx-font-family: Consolas; -fx-font-size: 12; -fx-min-width: 120;"/>
+        <Button text="zurück zum Dashboard" onAction="#backToMain"
+        		style="-fx-font-family: Consolas; -fx-font-size: 12; -fx-min-width: 120;"/>
+    </HBox>
+
+    <TextArea fx:id="commandInput" prefHeight="80" wrapText="true"
+              style="-fx-control-inner-background: #252526; -fx-text-fill: #d4d4d4; -fx-font-family: Consolas; -fx-font-size: 14;"/>
+
+    <ListView fx:id="consoleOutput" VBox.vgrow="ALWAYS"
+              style="-fx-control-inner-background: #1e1e1e; -fx-text-fill: #d4d4d4; -fx-font-family: Consolas; -fx-font-size: 13;"/>
+
+</VBox>

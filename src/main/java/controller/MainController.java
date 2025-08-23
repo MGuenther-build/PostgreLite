@@ -47,4 +47,9 @@ public class MainController {
     public void showTableListPopup() {
         PopupManager.openTableListPopup();
     }
+    
+    @FXML
+    public void AdminZone() {
+        PopupManager.openAdminZone();
+    }
 }

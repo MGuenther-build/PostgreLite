@@ -23,7 +23,7 @@
 					<Button text="Verbindungsstatus anzeigen" styleClass="button_status" onAction="#ShowConnectionStatus"/>
 					<Button text="Infos zur App" styleClass="button_about" onAction="#ShowAbout"/>
 					<Region prefHeight="20" />
-					<Button text="Adminbereich" styleClass="button_admin" onAction="#ShowConnectionStatus"/>
+					<Button text="Adminbereich" styleClass="button_admin" onAction="#AdminZone"/>
 				</VBox>	
 			</right>
 			
@@ -31,7 +31,7 @@
 				<HBox spacing="50" alignment="CENTER" prefWidth="500" prefHeight="100" styleClass="bottom">
 					<Button text="Postgre-Datenbank erstellen" onAction="#createDatabase"/>
 					<Button text="Tabelle erstellen" onAction="#createTable"/>
-					<Button text="Datenabfrage" onAction="#editDatabase"/>
+					<Button text="QueryTool" onAction="#editDatabase"/>
 				</HBox>
 			</bottom>
 </BorderPane>
