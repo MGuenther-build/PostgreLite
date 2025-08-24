@@ -1,5 +1,6 @@
 package controller;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -9,15 +10,15 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
+import javafx.stage.Stage;
 import service.ConnectionManager;
 import util.Session;
-import util.ViewSwitcher;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Optional;
 
 
 
@@ -29,6 +30,8 @@ public class AdminController {
     private ListView<TextFlow> consoleOutput;
     @FXML
     private Button clearConsoleButton;
+    @FXML
+    private Button historyButton;
     
     private final ObservableList<String> history = FXCollections.observableArrayList();
 
@@ -39,6 +42,9 @@ public class AdminController {
 
         commandInput.setStyle("-fx-control-inner-background: #252526; -fx-text-fill: #d4d4d4; -fx-font-family: Consolas; -fx-font-size: 14;");
         consoleOutput.setStyle("-fx-control-inner-background: #1e1e1e; -fx-font-family: Consolas; -fx-font-size: 13;");
+        
+        // Textfeldmarkierung deaktiviert
+        consoleOutput.setOnMouseClicked(e -> consoleOutput.getSelectionModel().clearSelection());
 
         commandInput.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (event.getCode() == KeyCode.ENTER) {
@@ -50,8 +56,28 @@ public class AdminController {
                 event.consume();
             }
         });
-
-        appendToConsole("> Willkommen im Adminbereich\n", Color.LIGHTBLUE);
+        
+        // aktueller Pfad in Konsole
+        Platform.runLater(() -> {
+            try (Connection conn = ConnectionManager.getConnection(Session.selectedDatabase);
+                 Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery("SELECT current_database();")) {
+                if (rs.next()) {
+                    appendToConsole("Verbunden mit DB: " + rs.getString(1), Color.LIGHTBLUE);
+                }
+            } catch (SQLException e) {
+                appendToConsole("Fehler beim Ermitteln der aktuellen DB: " + e.getMessage(), Color.RED);
+            }
+        });
+        
+        // Schließen verhindern, bevor nicht nachgefragt
+        Platform.runLater(() -> {
+            Stage stage = (Stage) commandInput.getScene().getWindow();
+            stage.setOnCloseRequest(event -> {
+                event.consume();
+                confirmClose(stage);
+            });
+        });
     }
 
     
@@ -62,7 +88,6 @@ public class AdminController {
         if (sql.isEmpty())
         	return;
 
-        appendToConsole("> " + sql, Color.LIGHTBLUE);
         history.add(sql);
 
         try (Connection conn = ConnectionManager.getConnection(Session.selectedDatabase);
@@ -96,7 +121,7 @@ public class AdminController {
                 
                 // Headerausgabe
                 StringBuilder strbuild = new StringBuilder();
-                strbuild.append("OK: Abfrage erfolgreich (ResultSet vorhanden)").append(System.lineSeparator());
+                strbuild.append("Abfrage erfolgreich").append(System.lineSeparator());
                 for (int i = 0; i < columnCount; i++) {
                 	strbuild.append(String.format("%-" + colWidths[i] + "s  ", headers[i]));
                 }
@@ -131,44 +156,95 @@ public class AdminController {
         consoleOutput.scrollTo(consoleOutput.getItems().size() - 1);
     }
 
-
     
+    
+    private boolean historyVisible = false;
+    @FXML
+    public void switcherHistory() {
+        if (historyVisible) {
+            // History ausblenden
+            consoleOutput.getItems().removeIf(item -> {
+                if (item.getChildren().isEmpty()) return false;
+                Text t = (Text) item.getChildren().get(0);
+                return t.getText().startsWith("===") || history.contains(t.getText().trim());
+            });
+            historyVisible = false;
+            historyButton.setText("Show History");
+        } else {
+            if (history.isEmpty()) {
+                TextFlow tf = appendToConsole("Keine Historie vorhanden.", Color.LIGHTGRAY);
+
+                // Timer: nach 5 Sekunden wieder entfernen
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException ignored) {}
+                    Platform.runLater(() -> consoleOutput.getItems().remove(tf));
+                }).start();
+
+                return;
+            }
+
+            StringBuilder strbuild2 = new StringBuilder();
+            strbuild2.append("=== SQL-Historie ===").append(System.lineSeparator());
+            for (String cmd : history) {
+                strbuild2.append(cmd).append(System.lineSeparator());
+            }
+            appendToConsole(strbuild2.toString(), Color.LIGHTBLUE);
+            consoleOutput.scrollTo(consoleOutput.getItems().size() - 1);
+
+            historyVisible = true;
+            historyButton.setText("Hide History");
+        }
+    }
+    
+    
+    
+    private TextFlow appendToConsole(String message, Color color) {
+        if (consoleCleared) {
+            consoleOutput.getItems().clear();
+            consoleCleared = false;
+        }
+        Text text = new Text(message);
+        text.setFill(color);
+        TextFlow textflow = new TextFlow(text);
+        consoleOutput.getItems().add(textflow);
+        return textflow;
+    }
+    
+    
+    
+    private boolean consoleCleared = false;
     @FXML
     public void clearConsole() {
         consoleOutput.getItems().clear();
         appendToConsole("> Konsole geleert\n", Color.LIGHTBLUE);
-    }
-
-    
-    
-    @FXML
-    public void showHistory() {
-        if (history.isEmpty()) {
-            appendToConsole("Keine Historie vorhanden.", Color.LIGHTGRAY);
-            return;
-        }
-
-        StringBuilder strbuild2 = new StringBuilder();
-        strbuild2.append("=== SQL-Historie ===").append(System.lineSeparator());
-        for (String cmd : history) {
-            strbuild2.append(cmd).append(System.lineSeparator());
-        }
-        appendToConsole(strbuild2.toString(), Color.LIGHTBLUE);
-        consoleOutput.scrollTo(consoleOutput.getItems().size() - 1);
+        consoleCleared = true;
     }
     
     
     
-    private void appendToConsole(String message, Color color) {
-        Text text = new Text(message);
-        text.setFill(color);
-        consoleOutput.getItems().add(new TextFlow(text));
+    private void confirmClose(Stage stage) {
+        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+        confirm.setTitle("Adminbereich schließen");
+        confirm.setHeaderText("Wirklich schließen?");
+        confirm.setContentText("Alle Eingaben im Adminbereich gehen verloren.");
+
+        ButtonType yes = new ButtonType("Ja, schließen");
+        ButtonType no = new ButtonType("Nein", ButtonBar.ButtonData.CANCEL_CLOSE);
+        confirm.getButtonTypes().setAll(yes, no);
+
+        Optional<ButtonType> result = confirm.showAndWait();
+        if (result.isPresent() && result.get() == yes) {
+            stage.close();
+        }
     }
     
 
     
     @FXML
-    public void backToMain() {
-        ViewSwitcher.switchTo("/gui_views/start.fxml");
+    public void closeAdminZone() {
+        Stage stage = (Stage) commandInput.getScene().getWindow();
+        confirmClose(stage);
     }
 }

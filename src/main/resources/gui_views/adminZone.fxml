@@ -11,16 +11,16 @@
     <HBox spacing="10" alignment="CENTER">
         <Button text="Clear Console" fx:id="clearConsoleButton" onAction="#clearConsole"
                 style="-fx-font-family: Consolas; -fx-font-size: 12; -fx-min-width: 120;"/>
-        <Button text="Show History" onAction="#showHistory"
-                style="-fx-font-family: Consolas; -fx-font-size: 12; -fx-min-width: 120;"/>
-        <Button text="zurück zum Dashboard" onAction="#backToMain"
-        		style="-fx-font-family: Consolas; -fx-font-size: 12; -fx-min-width: 120;"/>
+        <Button text="Show History" fx:id="historyButton" onAction="#switcherHistory"
+		        style="-fx-font-family: Consolas; -fx-font-size: 12;"/>
+      	<Button text="Schließen" onAction="#closeAdminZone"
+    			style="-fx-font-family: Consolas; -fx-font-size: 12;"/>
     </HBox>
 
     <TextArea fx:id="commandInput" prefHeight="80" wrapText="true"
-              style="-fx-control-inner-background: #252526; -fx-text-fill: #d4d4d4; -fx-font-family: Consolas; -fx-font-size: 14;"/>
+              style="-fx-control-inner-background: #252526; -fx-text-fill: #d4d4d4; -fx-font-family: Consolas; -fx-font-size: 15;"/>
 
     <ListView fx:id="consoleOutput" VBox.vgrow="ALWAYS"
-              style="-fx-control-inner-background: #1e1e1e; -fx-text-fill: #d4d4d4; -fx-font-family: Consolas; -fx-font-size: 13;"/>
+              style="-fx-control-inner-background: #1e1e1e; -fx-font-family: Consolas; -fx-font-size: 14;"/>
 
 </VBox>

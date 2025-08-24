@@ -33,6 +33,7 @@ import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import service.Excelimport;
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -234,10 +235,8 @@ public class PopupManager {
     public static void openAdminZone() {
         Alert alert = new Alert(Alert.AlertType.WARNING);
         alert.setTitle("Adminbereich");
-        alert.setHeaderText("⚠ Vorsicht: Gefährliche Zone!");
         alert.setContentText(
-            "Im Adminbereich ist jeder Befehl erlaubt. Es gibt hier keine Hilfen!\n" +
-            "Alles, was Sie hier ausführen, kann nicht rückgängig gemacht werden.\n\n" +
+            "Im Adminbereich ist jeder Befehl erlaubt. Es gibt hier keine Hilfen! Alles, was Sie hier ausführen, kann nicht rückgängig gemacht werden.\n\n" +
             "Verwenden Sie dieses Tool nur, wenn Sie genau wissen, was Sie tun."
         );
 
@@ -247,7 +246,27 @@ public class PopupManager {
 
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == okButton) {
-            ViewSwitcher.switchTo("/gui_views/adminZone.fxml");
+            try {
+                // AdminZone.fxml laden
+                FXMLLoader loader = new FXMLLoader(PopupManager.class.getResource("/gui_views/adminZone.fxml"));
+                Parent root = loader.load();
+
+                Stage stage = new Stage();
+                stage.setTitle("Adminbereich");
+                stage.setScene(new Scene(root));
+
+                Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
+                stage.setWidth(screenBounds.getWidth() * 0.75);
+                stage.setHeight(screenBounds.getHeight() * 0.75);
+                stage.setX((screenBounds.getWidth() - stage.getWidth()) / 2);
+                stage.setY((screenBounds.getHeight() - stage.getHeight()) / 2);
+
+                stage.initModality(Modality.APPLICATION_MODAL); // blockiert Hauptfenster
+                stage.show();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
