@@ -41,6 +41,23 @@ public class Main extends Application {
         primaryStage.setTitle("PostgreSQL-Dashboard");
         primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/icons/icon_all.png")));
         primaryStage.show();
+        
+        // Schließen nachfragen
+        primaryStage.setOnCloseRequest(event -> {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Info");
+            alert.setHeaderText("Programm wirklich beenden?");
+
+            ButtonType yesButton = new ButtonType("Ja");
+            ButtonType noButton = new ButtonType("Nein");
+
+            alert.getButtonTypes().setAll(yesButton, noButton);
+
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.isPresent() && result.get() != yesButton) {
+                event.consume(); // verhindert das Schließen
+            }
+        });
 
     	FXMLLoader loader = new FXMLLoader(getClass().getResource("/gui_views/db_config.fxml"));
     	Parent configView = loader.load();
@@ -65,7 +82,7 @@ public class Main extends Application {
 
             Optional<ButtonType> result = alert.showAndWait();
             if (result.isPresent() && result.get() == retryButton) {
-                // Popup nochmal öffnen
+                // Popup Config nochmal öffnen
                 while (true) {
                     FXMLLoader loader2 = new FXMLLoader(getClass().getResource("/gui_views/db_config.fxml"));
                     Parent configView2 = loader2.load();

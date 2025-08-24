@@ -17,8 +17,9 @@
     			style="-fx-font-family: Consolas; -fx-font-size: 12;"/>
     </HBox>
 
-    <TextArea fx:id="commandInput" prefHeight="80" wrapText="true"
-              style="-fx-control-inner-background: #252526; -fx-text-fill: #d4d4d4; -fx-font-family: Consolas; -fx-font-size: 15;"/>
+    <TextArea fx:id="commandInput" VBox.vgrow="ALWAYS" wrapText="true"
+          	  style="-fx-control-inner-background: #252526; -fx-text-fill: #d4d4d4; -fx-prompt-text-fill: #c0c0c0; -fx-font-family: Consolas; -fx-font-size: 15;"/>
+              
 
     <ListView fx:id="consoleOutput" VBox.vgrow="ALWAYS"
               style="-fx-control-inner-background: #1e1e1e; -fx-font-family: Consolas; -fx-font-size: 14;"/>

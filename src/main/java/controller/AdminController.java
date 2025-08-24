@@ -38,10 +38,7 @@ public class AdminController {
     @FXML
     public void initialize() {
         consoleOutput.setItems(FXCollections.observableArrayList());
-        commandInput.setPromptText("SQL-Befehl eingeben und Enter drücken...");
-
-        commandInput.setStyle("-fx-control-inner-background: #252526; -fx-text-fill: #d4d4d4; -fx-font-family: Consolas; -fx-font-size: 14;");
-        consoleOutput.setStyle("-fx-control-inner-background: #1e1e1e; -fx-font-family: Consolas; -fx-font-size: 13;");
+        commandInput.setPromptText("Befehl eingeben und Enter drücken...");
         
         // Textfeldmarkierung deaktiviert
         consoleOutput.setOnMouseClicked(e -> consoleOutput.getSelectionModel().clearSelection());
@@ -54,6 +51,14 @@ public class AdminController {
                     executeCommand();
                 }
                 event.consume();
+            }
+        });
+        
+        commandInput.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                commandInput.setPromptText("");
+            } else if (commandInput.getText().isEmpty()) {
+                commandInput.setPromptText("Befehl eingeben und Enter drücken...");
             }
         });
         
@@ -228,7 +233,6 @@ public class AdminController {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Adminbereich schließen");
         confirm.setHeaderText("Wirklich schließen?");
-        confirm.setContentText("Alle Eingaben im Adminbereich gehen verloren.");
 
         ButtonType yes = new ButtonType("Ja, schließen");
         ButtonType no = new ButtonType("Nein", ButtonBar.ButtonData.CANCEL_CLOSE);

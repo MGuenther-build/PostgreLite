@@ -236,8 +236,7 @@ public class PopupManager {
         Alert alert = new Alert(Alert.AlertType.WARNING);
         alert.setTitle("Adminbereich");
         alert.setContentText(
-            "Im Adminbereich ist jeder Befehl erlaubt. Es gibt hier keine Hilfen! Alles, was Sie hier ausführen, kann nicht rückgängig gemacht werden.\n\n" +
-            "Verwenden Sie dieses Tool nur, wenn Sie genau wissen, was Sie tun."
+            "Im Adminbereich ist jeder Befehl erlaubt. Verwenden Sie dieses Tool nur, wenn Sie wissen, was Sie tun!"
         );
 
         ButtonType okButton = new ButtonType("Ok, verstanden");
@@ -256,8 +255,8 @@ public class PopupManager {
                 stage.setScene(new Scene(root));
 
                 Rectangle2D screenBounds = Screen.getPrimary().getVisualBounds();
-                stage.setWidth(screenBounds.getWidth() * 0.75);
-                stage.setHeight(screenBounds.getHeight() * 0.75);
+                stage.setWidth(screenBounds.getWidth() * 0.80);
+                stage.setHeight(screenBounds.getHeight() * 0.80);
                 stage.setX((screenBounds.getWidth() - stage.getWidth()) / 2);
                 stage.setY((screenBounds.getHeight() - stage.getHeight()) / 2);
 
