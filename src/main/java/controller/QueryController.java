@@ -269,7 +269,7 @@ public class QueryController {
 
         // Zellformat
         if (!startCell.matches("^[A-Z]+[0-9]+$")) {
-            showWarning("Ungültiges Format", "Bitte gib eine gültige Zellreferenz ein (z. B. A1, B2, AA10).");
+            showWarning("Ungültiges Format", "Bitte gültige Zellreferenz eingeben (z. B. A1, B2, AA10).");
             return;
         }
 
@@ -297,50 +297,61 @@ public class QueryController {
             showWarning("Keine Datenbank ausgewählt", "Bitte Datenbank auswählen.");
             return;
         }
+        
+        boolean exists;
+        try {
+            exists = queryService.tableExists(database, tableName);
+        } catch (SQLException e) {
+            showError("Fehler bei Tabellenprüfung", e.getMessage());
+            return;
+        }
 
-        // Import starten
-        progressBar.setVisible(true);
-        Task<Void> importTask = new Task<Void>() {
-            @Override
-            protected Void call() throws Exception {
-                try {
-                    queryService.createTableFromExcel(database, tableName, excelData);
-
-                    int totalRows = excelData.size();
-                    int processed = 0;
-
-                    for (int i = 0; i < totalRows; i += 100) {
-                        int end = Math.min(i + 100, totalRows);
-                        List<Map<String, String>> batch = excelData.subList(i, end);
-                        queryService.insertData(database, tableName, batch);
-                        processed += batch.size();
-                        updateProgress(processed, totalRows);
-                    }
-
-                } catch (Exception e) {
-                    throw e;
-                }
-                return null;
-            }
-        };
-
-        importTask.setOnSucceeded(e -> {
-            progressBar.setVisible(false);
-            showInfo("Import erfolgreich", "Tabelle '" + tableName + "' wurde erstellt.");
-            buildTableExcel(excelData);
-        });
-
-        importTask.setOnFailed(e -> {
-            progressBar.setVisible(false);
-            try {
-                queryService.dropTable(database, tableName);
-            } catch (SQLException ignored) {}
-            showError("Fehler beim Import", importTask.getException().getMessage() + "\nTabelle wurde entfernt.");
-        });
-
-        progressBar.progressProperty().bind(importTask.progressProperty());
-        new Thread(importTask).start();
+        if (exists) {
+            showWarning("Tabelle existiert", "Die Tabelle '" + tableName + "' existiert bereits.\nBitte anderen Namen wählen.");
+            return;
+        }
+        startExcelImport(database, tableName, excelData);
     }
+
+    
+    
+    // Import starten
+    private void startExcelImport(String dbName, String tableName, List<Map<String, String>> data) {
+    	progressBar.setVisible(true);
+
+     	Task<Void> importTask = new Task<Void>() {
+        	@Override
+         	protected Void call() throws Exception {
+            	queryService.createTableFromExcel(dbName, tableName, data);
+
+              	int total = data.size();
+             	int processed = 0;
+
+              	for (int i = 0; i < total; i += 100) {
+                  	int end = Math.min(i + 100, total);
+                	List<Map<String, String>> batch = data.subList(i, end);
+                	queryService.insertData(dbName, tableName, batch);
+                	processed += batch.size();
+                	updateProgress(processed, total);
+             	}
+                return null;
+        	}
+     	};
+
+	   	importTask.setOnSucceeded(e -> {
+	    	progressBar.setVisible(false);
+	     	showInfo("Import erfolgreich", "Tabelle '" + tableName + "' wurde erstellt und befüllt.");
+	      	buildTableExcel(data);
+	 	});
+	
+	  	importTask.setOnFailed(e -> {
+	      	progressBar.setVisible(false);
+	     	showError("Import fehlgeschlagen", importTask.getException().getMessage());
+	  	});
+	
+		progressBar.progressProperty().bind(importTask.progressProperty());
+	  	new Thread(importTask).start();
+	}
 
 
     

@@ -3,8 +3,9 @@ package util;
 import java.util.regex.*;
 import org.fxmisc.richtext.model.StyleSpans;
 import org.fxmisc.richtext.model.StyleSpansBuilder;
-
 import java.util.Collection;
+
+
 
 public class SQLHighlighter {
 

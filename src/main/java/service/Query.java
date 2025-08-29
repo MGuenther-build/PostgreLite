@@ -117,7 +117,26 @@ public class Query {
     }
 
     
-        
+    
+    public boolean tableExists(String dbName, String tableName) throws SQLException {
+        String sql = "SELECT EXISTS (" +
+                     "SELECT FROM information_schema.tables " +
+                     "WHERE table_schema = 'public' AND table_name = ?" +
+                     ")";
+        try (Connection conn = ConnectionManager.getConnection(dbName);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, tableName);
+            try (ResultSet result = stmt.executeQuery()) {
+                if (result.next()) {
+                    return result.getBoolean(1);
+                }
+            }
+        }
+        return false;
+    }
+       
+    
+    
     public void createTableFromExcel(String dbName, String tableName, List<Map<String, String>> rows) throws SQLException {
         if (rows == null || rows.isEmpty())
         	return;
@@ -137,16 +156,6 @@ public class Query {
         try (Connection conn = ConnectionManager.getConnection(dbName);
              Statement stmt = conn.createStatement()) {
             stmt.executeUpdate(sb.toString());
-        }
-    }
-    
-
-    
-    public void dropTable(String dbName, String tableName) throws SQLException {
-        String sql = "DROP TABLE IF EXISTS " + tableName;
-        try (Connection conn = ConnectionManager.getConnection(dbName);
-             Statement stmt = conn.createStatement()) {
-            stmt.executeUpdate(sql);
         }
     }
 }

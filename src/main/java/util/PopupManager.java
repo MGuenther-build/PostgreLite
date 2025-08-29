@@ -1,6 +1,5 @@
 package util;
 
-import controller.DBConfigController;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
@@ -31,6 +30,7 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
+import controller.DBConfigController;
 import service.Excelimport;
 import java.io.File;
 import java.io.IOException;
