@@ -4,21 +4,24 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import org.fxmisc.richtext.LineNumberFactory;
 import javafx.animation.FadeTransition;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
@@ -26,6 +29,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.util.Callback;
 import javafx.util.Duration;
@@ -52,19 +56,18 @@ public class QueryController {
     @FXML
     private VBox queryBox;
     @FXML
-    private TableView<ObservableList<String>> resultTable;
+    private TableView<Map<String, Object>> resultTable;
     @FXML
     private Button importExcelButton;
     @FXML
     private Button exportButton;
     @FXML
-    private ProgressBar progressBar;
-    @FXML
-    private Label infoLabel;
-    @FXML
     private TableView<String> sqlHistory;
     @FXML
     private TitledPane historyBoard;
+    @FXML
+    private StackPane toastPane;
+    @FXML
 
     
     
@@ -81,16 +84,25 @@ public class QueryController {
     public void initialize() {
         queryCodeArea = new CodeArea();
         queryCodeArea.setParagraphGraphicFactory(LineNumberFactory.get(queryCodeArea));
-        queryCodeArea.setPrefHeight(200);
-        queryCodeArea.setStyle("-fx-font-family: 'Consolas'; -fx-font-size: 14;");
-
-        VirtualizedScrollPane<CodeArea> scrollPane = new VirtualizedScrollPane<>(queryCodeArea);
-        queryBox.getChildren().add(scrollPane);
+        queryCodeArea.setPrefHeight(300);
+        queryCodeArea.setStyle("-fx-font-family: 'Consolas'; -fx-font-size: 1.5em; -fx-border-color: white; -fx-border-width: 3;");
 
         // Highlighting
         queryCodeArea.textProperty().addListener((obs, oldText, newText) -> {
             queryCodeArea.setStyleSpans(0, SQLHighlighter.computeHighlighting(newText));
         });
+        
+        // Abstand Zeilenanzeige zum Text
+        queryCodeArea.setParagraphGraphicFactory(line -> {
+            Label lineNo = new Label(String.format("%4d", line + 1));
+            lineNo.setStyle("-fx-text-fill: gray; -fx-font-size: 12; -fx-font-weight: bold;");
+            StackPane spacer = new StackPane(lineNo);
+            spacer.setPadding(new Insets(0, 15, 0, 0));
+            return spacer;
+        });
+        
+        VirtualizedScrollPane<CodeArea> scrollPane = new VirtualizedScrollPane<>(queryCodeArea);
+        queryBox.getChildren().add(scrollPane);
 
         updateDatabaseList();
         
@@ -99,17 +111,22 @@ public class QueryController {
         queryColumn.setPrefWidth(400);
 
         resultTable.setPlaceholder(new Label ("noch keine Daten vorhanden"));
+        resultTable.setStyle("-fx-font-size: 1.5em;");
         sqlHistory.setPlaceholder(new Label ("noch keine Abfragen in dieser Session"));
         sqlHistory.getColumns().add(queryColumn);
         addDeleteColumnSQLHistory();
         sqlHistory.setItems(queryHistory);
+        sqlHistory.setStyle("-fx-font-size: 1.25em;");
 
         // Doppelklick zum Wiederverwenden
         sqlHistory.setRowFactory(tv -> {
             TableRow<String> row = new TableRow<>();
             row.setOnMouseClicked(event -> {
                 if (event.getClickCount() == 2 && !row.isEmpty()) {
-                    queryCodeArea.replaceText(row.getItem());
+                    String sql = row.getItem();
+                    queryCodeArea.replaceText(sql);
+                    queryCodeArea.moveTo(queryCodeArea.getLength());
+                    queryCodeArea.requestFocus();
                 }
             });
             return row;
@@ -136,7 +153,6 @@ public class QueryController {
 
     @FXML
     public void executeSQL() {
-    	resetInfos();
         String sql = queryCodeArea.getText().trim();
         String database = Session.selectedDatabase;
 
@@ -171,41 +187,75 @@ public class QueryController {
         
         if (!sql.isBlank() && !queryHistory.contains(sql)) {
             queryHistory.add(sql);
-            historyBoard.setExpanded(true);
         }
     }
+    
+    
+    // Hilfsmethode für Typerkennung im buildTable
+    private Class<?> detectColumnType(List<Map<String, Object>> rows, String columnName) {
+        int maxSamples = Math.min(rows.size(), 20);
+        Class<?> type = null;
+        for (int i = 0; i < maxSamples; i++) {
+            Object value = rows.get(i).get(columnName);
+            if (value == null)
+            	continue;
+            if (type == null) {
+                type = value.getClass();
+            } else if (!type.equals(value.getClass())) {
+                return Object.class; // Fallback bei Uneinheitlichkeit
+            }
+        }
+        return type != null ? type : Object.class;
+    }
 
+    
+    
     private void buildTable(List<Map<String, Object>> rows) {
-    	resetInfos();
         resultTable.getColumns().clear();
         resultTable.getItems().clear();
 
         if (rows == null || rows.isEmpty())
-        	return;
+            return;
 
-        // Spalten dynamisch aus Keys der ersten Zeile erzeugen
         Map<String, Object> firstRow = rows.get(0);
         List<String> columnNames = new ArrayList<>(firstRow.keySet());
 
-        for (int colIndex = 0; colIndex < columnNames.size(); colIndex++) {
-            final int index = colIndex;
-            TableColumn<ObservableList<String>, String> col =
-                    new TableColumn<>(columnNames.get(colIndex));
-            col.setCellValueFactory(param ->
-                    new ReadOnlyObjectWrapper<>(param.getValue().get(index)));
+        for (String colName : columnNames) {
+            TableColumn<Map<String, Object>, Object> col = new TableColumn<>(colName);
+            col.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(colName)));
+
+            // Typ-Erkennung
+            Class<?> detectedType = detectColumnType(rows, colName);
+            col.setCellFactory(new Callback<TableColumn<Map<String, Object>, Object>, TableCell<Map<String, Object>, Object>>() {
+                @Override
+                public TableCell<Map<String, Object>, Object> call(TableColumn<Map<String, Object>, Object> column) {
+                    return new TableCell<Map<String, Object>, Object>() {
+                        @Override
+                        protected void updateItem(Object item, boolean empty) {
+                            super.updateItem(item, empty);
+                            if (empty || item == null) {
+                                setText(null);
+                                setStyle("");
+                            } else if (detectedType == Boolean.class) {
+                                setText((Boolean) item ? "✔" : "✘");
+                                setStyle("-fx-alignment: CENTER;");
+                            } else if (Number.class.isAssignableFrom(detectedType)) {
+                                setText(String.format("%,.2f", ((Number) item).doubleValue()));
+                                setStyle("-fx-alignment: CENTER-RIGHT;");
+                            } else if (detectedType == java.sql.Date.class || detectedType == java.time.LocalDate.class) {
+                                setText(item.toString());
+                                setStyle("-fx-alignment: CENTER;");
+                            } else {
+                                setText(item.toString());
+                                setStyle("-fx-alignment: CENTER-LEFT;");
+                            }
+                        }
+                    };
+                }
+            });
             resultTable.getColumns().add(col);
         }
-
-        // Daten füllen
-        ObservableList<ObservableList<String>> data = FXCollections.observableArrayList();
-        for (Map<String, Object> row : rows) {
-            ObservableList<String> observableRow = FXCollections.observableArrayList();
-            for (String colName : columnNames) {
-                Object val = row.get(colName);
-                observableRow.add(val == null ? "" : val.toString());
-            }
-            data.add(observableRow);
-        }
+        ObservableList<Map<String, Object>> data = FXCollections.observableArrayList(rows);
         resultTable.setItems(data);
         autoResizeColumns();
     }
@@ -246,26 +296,19 @@ public class QueryController {
     
     @FXML
     public void importExcel() {
-        resetInfos();
-
-        // Datei auswählen
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Excel-Datei auswählen");
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Excel-Dateien", "*.xlsx"));
-        File file = chooser.showOpenDialog(queryBox.getScene().getWindow());
-
-        if (file == null)
-            return;
-
-        // Eingabe Tabellenname und Startzelle
         Map<String, String> input = PopupManager.openExcelImportPopup(queryBox.getScene().getWindow());
-        if (input == null || input.get("tableName").isBlank() || input.get("startCell").isBlank()) {
+        if (input == null) {
+        	return;
+        }
+        if (input.get("tableName").isBlank() || input.get("startCell").isBlank()) {
             showWarning("Ungültige Eingabe", "Tabellenname und Startzelle dürfen nicht leer sein.");
             return;
         }
 
         String tableName = input.get("tableName").trim();
         String startCell = input.get("startCell").trim();
+        
+        File selectedFile = new File(input.get("filePath"));
 
         // Zellformat
         if (!startCell.matches("^[A-Z]+[0-9]+$")) {
@@ -275,9 +318,9 @@ public class QueryController {
 
         // Daten einlesen
         Excelimport importer = new Excelimport();
-        List<Map<String, String>> excelData;
+        List<Map<String, Object>> excelData;
         try {
-            excelData = importer.readExcel(file, startCell);
+            excelData = importer.readExcel(selectedFile, startCell);
         } catch (RuntimeException ex) {
             showError("Fehlerhafte Datei", ex.getMessage());
             return;
@@ -316,8 +359,7 @@ public class QueryController {
     
     
     // Import starten
-    private void startExcelImport(String dbName, String tableName, List<Map<String, String>> data) {
-    	progressBar.setVisible(true);
+    private void startExcelImport(String dbName, String tableName, List<Map<String, Object>> data) {
 
      	Task<Void> importTask = new Task<Void>() {
         	@Override
@@ -329,57 +371,53 @@ public class QueryController {
 
               	for (int i = 0; i < total; i += 100) {
                   	int end = Math.min(i + 100, total);
-                	List<Map<String, String>> batch = data.subList(i, end);
-                	queryService.insertData(dbName, tableName, batch);
-                	processed += batch.size();
+                  	List<Map<String, Object>> batch = data.subList(i, end);
+                  	queryService.insertData(dbName, tableName, batch);
+                  	
+                  	processed += batch.size();
                 	updateProgress(processed, total);
              	}
                 return null;
         	}
      	};
 
-	   	importTask.setOnSucceeded(e -> {
-	    	progressBar.setVisible(false);
-	     	showInfo("Import erfolgreich", "Tabelle '" + tableName + "' wurde erstellt und befüllt.");
-	      	buildTableExcel(data);
-	 	});
+     	importTask.setOnSucceeded(e -> {
+     	    showInfo("Import erfolgreich", "Tabelle '" + tableName + "' wurde erstellt.");
+     	    
+     	   List<Map<String, Object>> converted = new ArrayList<>();
+     	   for (Map<String, Object> row : data) {
+     		   converted.add(new LinkedHashMap<>(row));
+     	  }
+     	  buildTableExcel(data);
+     	});
 	
 	  	importTask.setOnFailed(e -> {
-	      	progressBar.setVisible(false);
 	     	showError("Import fehlgeschlagen", importTask.getException().getMessage());
 	  	});
-	
-		progressBar.progressProperty().bind(importTask.progressProperty());
 	  	new Thread(importTask).start();
 	}
 
 
     
-    private void buildTableExcel(List<Map<String, String>> rows) {
+    private void buildTableExcel(List<Map<String, Object>> rows) {
         resultTable.getColumns().clear();
         resultTable.getItems().clear();
 
-        Map<String, String> firstRow = rows.get(0);
+        if (rows == null || rows.isEmpty()) {
+            showWarning("Problem", "Datei enthält keine lesbaren Tabellen oder ist leer.");
+            return;
+        }
+
+        Map<String, Object> firstRow = rows.get(0);
         List<String> columnNames = new ArrayList<>(firstRow.keySet());
 
-        for (int colIndex = 0; colIndex < columnNames.size(); colIndex++) {
-            final int index = colIndex;
-            TableColumn<ObservableList<String>, String> col =
-                    new TableColumn<>(columnNames.get(colIndex));
-            col.setCellValueFactory(param ->
-                    new ReadOnlyObjectWrapper<>(param.getValue().get(index)));
+        for (String colName : columnNames) {
+            TableColumn<Map<String, Object>, Object> col = new TableColumn<>(colName);
+            col.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().get(colName)));
             resultTable.getColumns().add(col);
         }
 
-        ObservableList<ObservableList<String>> data = FXCollections.observableArrayList();
-        for (Map<String, String> row : rows) {
-            ObservableList<String> observableRow = FXCollections.observableArrayList();
-            for (String colName : columnNames) {
-                observableRow.add(row.getOrDefault(colName, ""));
-            }
-            data.add(observableRow);
-        }
-
+        ObservableList<Map<String, Object>> data = FXCollections.observableArrayList(rows);
         resultTable.setItems(data);
         autoResizeColumns();
     }
@@ -400,27 +438,32 @@ public class QueryController {
             new FileChooser.ExtensionFilter("CSV-Datei (*.csv)", "*.csv")
         );
         File file = chooser.showSaveDialog(queryBox.getScene().getWindow());
-        
-        if (file == null)
-        	return;
-        
-        if (resultTable.getItems().isEmpty()) {
-            showWarning("Kein Inhalt", "Es gibt keine Daten zu exportieren!");
+
+        if (file == null) {
+            showWarning("Info", "Datei ist leer.");
             return;
         }
 
+        List<String> headers = resultTable.getColumns().stream()
+            .map(TableColumn::getText)
+            .toList();
+
+        ObservableList<ObservableList<String>> data = FXCollections.observableArrayList();
+        for (Map<String, Object> row : resultTable.getItems()) {
+            ObservableList<String> rowData = FXCollections.observableArrayList();
+            for (String header : headers) {
+                Object value = row.get(header);
+                rowData.add(value != null ? value.toString() : "");
+            }
+            data.add(rowData);
+        }
+
         try {
-            List<String> headers = resultTable.getColumns().stream()
-                .map(col -> col.getText())
-                .toList();
-
-            ObservableList<ObservableList<String>> data = resultTable.getItems();
             ExportData exporter = new ExportData();
-
             if (file.getName().endsWith(".xlsx")) {
-                exporter.exportToExcel(file, headers, data);
+            	exporter.exportToExcel(file, headers, data);
             } else if (file.getName().endsWith(".csv")) {
-                exporter.exportToCSV(file, headers, data);
+            	exporter.exportToCSV(file, headers, data);
             } else {
                 showError("Fehler", "Unbekanntes Dateiformat.");
                 return;
@@ -459,32 +502,50 @@ public class QueryController {
     }
     
     
+
+    private void showToast(String message, String color) {
+        Label toast = new Label(message);
+        toast.getStyleClass().add("toast");
+        toast.setTextFill(Color.WHITE);
+        toast.setStyle("-fx-background-color: " + color + ";");
+        toastPane.getChildren().add(toast);
+
+        FadeTransition fadeIn = new FadeTransition(Duration.millis(1000), toast);
+        fadeIn.setFromValue(0);
+        fadeIn.setToValue(1);
+        
+        // Meldung automatisch nach 5 Sek. weg
+        PauseTransition pause = new PauseTransition(Duration.seconds(5));
+        FadeTransition fadeOutAuto = new FadeTransition(Duration.millis(1000), toast);
+        fadeOutAuto.setFromValue(1);
+        fadeOutAuto.setToValue(0);
+        fadeOutAuto.setOnFinished(e -> toastPane.getChildren().remove(toast));
+        
+        SequentialTransition seq = new SequentialTransition(fadeIn, pause, fadeOutAuto);
+        seq.play();
+        
+        // Meldung durch Klick verschwinden lassen
+        toast.setOnMouseClicked(e -> {
+            if (toast.getUserData() != null && "closing".equals(toast.getUserData())) {
+                return;
+            }
+            toast.setUserData("closing");
+            seq.stop();
+
+            FadeTransition clickFadeOut = new FadeTransition(Duration.millis(500), toast);
+            clickFadeOut.setFromValue(toast.getOpacity());
+            clickFadeOut.setToValue(0);
+            clickFadeOut.setOnFinished(ev -> toastPane.getChildren().remove(toast));
+            clickFadeOut.play();
+        });
+    }
     private void showError(String title, String message) {
-    	infoLabel.setOpacity(1);
-        infoLabel.setText("" + message);
-        infoLabel.setStyle("-fx-text-fill: red;");
+        showToast(message, "#ba2d2d");
     }
     private void showInfo(String title, String message) {
-    	infoLabel.setOpacity(1); 
-        infoLabel.setText("" + message);
-        infoLabel.setStyle("-fx-text-fill: green;");
+        showToast(message, "#4ea312");
     }
     private void showWarning(String title, String message) {
-    	infoLabel.setOpacity(1);
-        infoLabel.setText("" + title + ": " + message);
-        infoLabel.setStyle("-fx-text-fill: orange;");
-    }
-    private void resetInfos() {
-        clearInfos();
-    }
-    private void clearInfos() {
-        FadeTransition fade = new FadeTransition(Duration.seconds(2), infoLabel);
-        fade.setFromValue(1.0);
-        fade.setToValue(0.0);
-        fade.setOnFinished(e -> {
-            infoLabel.setText("");
-            infoLabel.setOpacity(1);
-        });
-        fade.play();
+        showToast(message, "#e06c0b");
     }
 }

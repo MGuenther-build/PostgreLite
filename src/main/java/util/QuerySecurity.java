@@ -35,7 +35,7 @@ public class QuerySecurity {
 
         for (String keyword : FORBIDDEN) {
             if (cleaned.contains(keyword)) {
-                return "Befehl '" + keyword + "' ist nur im Adminbereich erlaubt!";
+                return "Befehl '" + keyword + "' ist nur in der AdminZone erlaubt!";
             }
         }
 

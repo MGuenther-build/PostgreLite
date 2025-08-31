@@ -2,47 +2,55 @@
 
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
-<?import java.lang.String?>
 <?import javafx.geometry.Insets?>
 
-<BorderPane xmlns:fx="http://javafx.com/fxml"
-			xmlns="http://javafx.com/javafx"
+<ScrollPane xmlns:fx="http://javafx.com/fxml"
+            xmlns="http://javafx.com/javafx"
             fx:controller="controller.QueryController"
             stylesheets="@/css/styles.css"
-            >
+            fitToWidth="true"
+            fitToHeight="true">
 
-    <top>
-        <HBox spacing="10" alignment="CENTER" styleClass="config-header">
-            <ComboBox fx:id="databaseComboBox" prefWidth="200" onAction="#onDatabaseSelected"/>
-            <Button fx:id="showTablesButton" text="vorhandene Tabellen" onAction="#showTables"/>
-            <Button fx:id="executeSQLButton" text="SQL ausführen" onAction="#executeSQL"/>
-            <Button fx:id="importExcelButton" text="Excel importieren" onAction="#importExcel"/>
-            <Button fx:id="exportButton" text="Exportieren" onAction="#exportExcelOrCSV"/>
-            <Button text="zurück zum Dashboard" onAction="#backToMain"/>
-        </HBox>
-    </top>
+    <content>
+        <StackPane>
+            <BorderPane>
+                <top>
+                    <HBox spacing="40" alignment="CENTER" style="-fx-padding: 1em;" styleClass="headerform">
+                        <ComboBox fx:id="databaseComboBox" prefWidth="300" minHeight="50"
+                                  style="-fx-font-size: 1.5em;" onAction="#onDatabaseSelected"/>
+                        <Button fx:id="showTablesButton" text="vorhandene Tabellen" styleClass="query_button" onAction="#showTables"/>
+                        <Button fx:id="importExcelButton" text="Excel importieren" styleClass="excel_button" onAction="#importExcel"/>
+                        <Button fx:id="exportButton" text="Exportieren" styleClass="excel_button" onAction="#exportExcelOrCSV"/>
+                        <Button text="zurück zum Dashboard" styleClass="back_query_OK" onAction="#backToMain"/>
+                    </HBox>
+                </top>
 
-    <!-- CENTER: SQL Editor -->
-    <center>
-        <VBox spacing="10" alignment="CENTER" styleClass="config-form">
-            <Label text="SQL-Abfrage:" style="-fx-font-weight: bold;"/>
-            <VBox fx:id="queryBox" style="-fx-border-color: lightgray; -fx-border-radius: 4;"/>
-        </VBox>
-    </center>
+                <center>
+                    <VBox spacing="0" alignment="CENTER" styleClass="queryform">
+                        <VBox fx:id="queryBox" style="-fx-padding: 2em 8em 0 8em;"/>
+                        <HBox alignment="CENTER">
+                            <Button fx:id="executeSQLButton" text="Befehl ausführen" styleClass="execute_ok" onAction="#executeSQL"/>
+                        </HBox>
+                    </VBox>
+                </center>
 
-    <!-- BOTTOM: Result Table -->
-    <bottom>
-        <VBox spacing="10" alignment="CENTER" styleClass="config-form">
-            <Label text="Ergebnisse:" style="-fx-font-weight: bold;"/>
-            <TableView fx:id="resultTable"/>
-            <Label fx:id="infoLabel" text="" style="-fx-text-fill: red;"/>
-            <TitledPane fx:id="historyBoard" text="SQL-History" expanded="false">
-        		<content>
-            		<TableView fx:id="sqlHistory" prefHeight="200"/>
-        		</content>
-    		</TitledPane>
-    		<ProgressBar fx:id="progressBar" prefWidth="300" progress="0.0" visible="false"/>
-        </VBox>
-    </bottom>
-
-</BorderPane>
+                <bottom>
+                    <VBox spacing="10" alignment="CENTER" styleClass="queryform2">
+                        <VBox style="-fx-padding: 1em 4em 0 4em;">
+                            <TableView fx:id="resultTable"/>
+                        </VBox>
+                        <TitledPane fx:id="historyBoard" style="-fx-padding: 0 3em 0 3em; -fx-font-size: 1.25em;" text="SQL-History" expanded="false">
+                            <content>
+                                <TableView fx:id="sqlHistory"/>
+                            </content>
+                        </TitledPane>
+                    </VBox>
+                </bottom>
+            </BorderPane>
+            <StackPane fx:id="toastPane"
+                       pickOnBounds="false"
+                       alignment="BOTTOM_CENTER"
+                       style="-fx-padding: 20;"/>
+        </StackPane>
+    </content>
+</ScrollPane>

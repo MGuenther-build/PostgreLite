@@ -1,5 +1,6 @@
 package service;
 
+import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -47,72 +48,77 @@ public class Query {
     
     
     
-    public void insertData(String dbName, String tableName, List<Map<String, String>> rows) throws SQLException {
+    public void insertData(String dbName, String tableName, List<Map<String, Object>> rows) throws SQLException {
         if (rows.isEmpty())
-        	return;
+            return;
 
-        String columns = String.join(", ", rows.get(0).keySet());
+        String columns = rows.get(0).keySet().stream()
+        	    .map(col -> "\"" + col + "\"")
+        	    .collect(Collectors.joining(", "));
+        
         String placeholders = rows.get(0).keySet().stream()
             .map(k -> "?").collect(Collectors.joining(", "));
 
         String sql = "INSERT INTO " + tableName + " (" + columns + ") VALUES (" + placeholders + ")";
 
+        System.out.println("SQL: " + sql);
+        for (Map<String, Object> row : rows) {
+            System.out.println("Row: " + row);
+        }
+        
         try (Connection conn = ConnectionManager.getConnection(dbName);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            for (Map<String, String> row : rows) {
+            for (Map<String, Object> row : rows) {
                 int index = 1;
-                for (String value : row.values()) {
-                    stmt.setString(index++, value);
+                for (Object value : row.values()) {
+                    stmt.setObject(index++, value);
                 }
                 stmt.addBatch();
             }
             stmt.executeBatch();
-        }
+        
+	    } catch (BatchUpdateException bue) {
+	        System.err.println("BatchUpdateException: " + bue.getMessage());
+	        SQLException next = bue.getNextException();
+	        if (next != null) {
+	            next.printStackTrace();
+	        }
+	    }
     }
     
     
     
-    private Map<String, String> detectColumnTypes(List<Map<String, String>> rows) {
+    private Map<String, String> detectColumnTypes(List<Map<String, Object>> rows) {
         Map<String, String> types = new LinkedHashMap<>();
 
         if (rows.isEmpty())
-        	return types;
+            return types;
 
         for (String column : rows.get(0).keySet()) {
-            boolean isInteger = true;
-            boolean isReal = true;
+            Class<?> type = null;
 
-            for (Map<String, String> row : rows) {
-                String value = row.get(column);
-                if (value == null || value.isBlank())
-                	continue;
-
-                if (isInteger) {
-                    try {
-                        Integer.parseInt(value);
-                    } catch (NumberFormatException e) {
-                        isInteger = false;
-                    }
-                }
-
-                if (!isInteger && isReal) {
-                    try {
-                        Double.parseDouble(value);
-                    } catch (NumberFormatException e) {
-                        isReal = false;
-                    }
+            for (Map<String, Object> row : rows) {
+                Object value = row.get(column);
+                if (value != null) {
+                    type = value.getClass();
+                    break;
                 }
             }
 
-            if (isInteger) {
-                types.put(column, "INTEGER");
-            } else if (isReal) {
+            if (type == null) {
+                types.put(column, "TEXT"); // Fallback
+            } else if (Number.class.isAssignableFrom(type)) {
                 types.put(column, "REAL");
+            } else if (type == Boolean.class) {
+                types.put(column, "BOOLEAN");
+            } else if (type == java.sql.Date.class || type == java.time.LocalDate.class) {
+                types.put(column, "DATE");
             } else {
                 types.put(column, "TEXT");
             }
         }
+
         return types;
     }
 
@@ -137,9 +143,9 @@ public class Query {
        
     
     
-    public void createTableFromExcel(String dbName, String tableName, List<Map<String, String>> rows) throws SQLException {
+    public void createTableFromExcel(String dbName, String tableName, List<Map<String, Object>> rows) throws SQLException {
         if (rows == null || rows.isEmpty())
-        	return;
+            return;
 
         Map<String, String> columnTypes = detectColumnTypes(rows);
 

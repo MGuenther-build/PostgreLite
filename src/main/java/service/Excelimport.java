@@ -10,8 +10,8 @@ import java.util.*;
 
 public class Excelimport {
 	
-	public List<Map<String, String>> readExcel(File file, String startCellRef) throws IOException {
-	    List<Map<String, String>> rows = new ArrayList<>();
+	public List<Map<String, Object>> readExcel(File file, String startCellRef) throws IOException {
+	    List<Map<String, Object>> rows = new ArrayList<>();
 
 	    int startRow = getRowIndex(startCellRef);
 	    int startCol = getColIndex(startCellRef);
@@ -28,17 +28,27 @@ public class Excelimport {
 	        List<String> headers = new ArrayList<>();
 	        for (int col = startCol; col < headerRow.getLastCellNum(); col++) {
 	            Cell cell = headerRow.getCell(col);
-	            headers.add(getCellValue(cell));
+	            headers.add(cell != null ? String.valueOf(getCellValue(cell)) : "Spalte_" + col);
 	        }
 
 	        for (int rowIndex = startRow + 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
 	            Row row = sheet.getRow(rowIndex);
-	            if (row == null) continue;
+	            if (row == null)
+	                continue;
 
-	            Map<String, String> rowData = new LinkedHashMap<>();
+	            Map<String, Object> rowData = new LinkedHashMap<>();
 	            for (int col = 0; col < headers.size(); col++) {
 	                Cell cell = row.getCell(startCol + col);
-	                rowData.put(headers.get(col), getCellValue(cell));
+	                String header = headers.get(col);
+
+	                Object value;
+	                if (header.equalsIgnoreCase("PLZ") && cell != null && cell.getCellType() == CellType.NUMERIC) {
+	                    value = String.format("%.0f", cell.getNumericCellValue()); // PLZ als String ohne Nachkommastellen
+	                } else {
+	                    value = getCellValue(cell);
+	                }
+
+	                rowData.put(header, value);
 	            }
 	            rows.add(rowData);
 	        }
@@ -62,20 +72,34 @@ public class Excelimport {
 
 
 	
-	private String getCellValue(Cell cell) {
-		if (cell == null)
-			return "";
-		switch (cell.getCellType()) {
-			case STRING:
-				return cell.getStringCellValue();
-			case NUMERIC:
-				return String.valueOf(cell.getNumericCellValue());
-			case BOOLEAN:
-				return String.valueOf(cell.getBooleanCellValue());
-			case FORMULA:
-				return cell.getCellFormula();
-			default:
-				return "";
-		}
+	private Object getCellValue(Cell cell) {
+	    if (cell == null)
+	    	return "";
+
+	    switch (cell.getCellType()) {
+	        case STRING:
+	            return cell.getStringCellValue();
+	        case NUMERIC:
+	            if (DateUtil.isCellDateFormatted(cell)) {
+	                return cell.getDateCellValue();
+	            } else {
+	                return cell.getNumericCellValue();
+	            }
+	        case BOOLEAN:
+	            return cell.getBooleanCellValue();
+	        case FORMULA:
+	            switch (cell.getCachedFormulaResultType()) {
+	                case STRING:
+	                    return cell.getStringCellValue();
+	                case NUMERIC:
+	                    return DateUtil.isCellDateFormatted(cell) ? cell.getDateCellValue() : cell.getNumericCellValue();
+	                case BOOLEAN:
+	                    return cell.getBooleanCellValue();
+	                default:
+	                    return cell.getCellFormula(); // Fallback
+	            }
+	        default:
+	            return "";
+	    }
 	}
 }

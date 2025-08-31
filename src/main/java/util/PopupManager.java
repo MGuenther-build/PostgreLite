@@ -34,7 +34,9 @@ import controller.DBConfigController;
 import service.Excelimport;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -364,7 +366,15 @@ public class PopupManager {
         previewBtn.setOnAction(e -> {
             if (selectedFile[0] == null || startCellField.getText().isBlank()) return;
             try {
-                List<Map<String, String>> data = new Excelimport().readExcel(selectedFile[0], startCellField.getText().trim());
+            	List<Map<String, Object>> rawData = new Excelimport().readExcel(selectedFile[0], startCellField.getText().trim());
+            	List<Map<String, String>> data = new ArrayList<>();
+            	for (Map<String, Object> row : rawData) {
+            	    Map<String, String> stringRow = new LinkedHashMap<>();
+            	    for (Map.Entry<String, Object> entry : row.entrySet()) {
+            	        stringRow.put(entry.getKey(), entry.getValue() != null ? entry.getValue().toString() : "");
+            	    }
+            	    data.add(stringRow);
+            	}
                 previewTable.getColumns().clear();
                 previewTable.getItems().clear();
 
@@ -391,6 +401,7 @@ public class PopupManager {
             Map<String, String> result = new HashMap<>();
             result.put("tableName", tableNameField.getText().trim());
             result.put("startCell", startCellField.getText().trim());
+            result.put("filePath", selectedFile[0].getAbsolutePath());
             popup.setUserData(result);
             popup.close();
         });

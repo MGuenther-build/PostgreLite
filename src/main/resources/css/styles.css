@@ -3,6 +3,8 @@
 	-fx-background-image: url("/images/wall.jpg");
 	-fx-background-size: 100% 100%;
 	-fx-font-family: "League Gothic";
+	-fx-focus-color: transparent;
+    -fx-faint-focus-color: transparent;
 }
 
 
@@ -318,3 +320,116 @@
 	-fx-padding: 1em 0em 1em 0;
 }
 
+
+
+.query_button {
+	-fx-background-color: #53944A;
+	-fx-text-fill: white;
+	-fx-font-size: 1.5em;
+	-fx-pref-width: 200px;
+    -fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 4, 0, 0, 2);
+    -fx-opacity: 0.9;
+}
+.query_button:hover {
+    -fx-background-color: linear-gradient(to bottom, #67B55C, #53944A);
+    -fx-opacity: 1.0;
+}
+.query_button:pressed {
+    -fx-scale-x: 0.96;
+    -fx-scale-y: 0.96;
+    -fx-translate-y: 2px;
+}
+
+
+
+.excel_button {
+	-fx-background-color: #376331;
+	-fx-text-fill: white;
+	-fx-font-size: 1.5em;
+	-fx-pref-width: 200px;
+	-fx-pref-height: 50px;
+	-fx-background-radius: 12;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 4, 0, 0, 2);
+    -fx-opacity: 1.0;
+}
+.excel_button:hover {
+    -fx-background-color: linear-gradient(to bottom, #5EA854, #376331);
+    -fx-opacity: 0.9;
+}
+.excel_button:pressed {
+    -fx-scale-x: 0.96;
+    -fx-scale-y: 0.96;
+    -fx-translate-y: 2px;
+}
+
+
+
+.back_query_OK {
+    -fx-background-color: linear-gradient(to bottom, #C21F1F, #941616);
+    -fx-text-fill: white;
+	-fx-pref-width: 200px;
+	-fx-pref-height: 40px;
+    -fx-font-size: 1.5em;
+    -fx-background-radius: 50;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 4, 0, 0, 2);
+    -fx-opacity: 0.8;
+}
+.back_query_OK:hover {
+    -fx-background-color: linear-gradient(to bottom, #ED3E3E, #C21F1F);
+    -fx-opacity: 0.9;
+}
+.back_query_OK:pressed {
+    -fx-scale-x: 0.96;
+    -fx-scale-y: 0.96;
+    -fx-translate-y: 2px;
+}
+
+
+
+.execute_ok {
+    -fx-background-color: linear-gradient(to bottom, #665F5F, #000000);
+    -fx-text-fill: white;
+    -fx-font-size: 1.5em;
+    -fx-background-radius: 0 0 60 60;
+    -fx-border-radius: 0 0 60 60;
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.4), 4, 0, 0, 2);
+    -fx-opacity: 0.8;
+}
+.execute_ok:hover {
+    -fx-background-color: linear-gradient(to bottom, #53944A, #3A6933);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 4, 0, 0, 2);
+    -fx-opacity: 0.9;
+}
+.execute_ok:pressed {
+    -fx-scale-x: 0.96;
+    -fx-scale-y: 0.96;
+    -fx-translate-y: 2px;
+}
+
+
+
+.headerform {
+	-fx-background-color: linear-gradient(to bottom, #665F5F, #575151);
+}
+
+.queryform {
+	-fx-background-color: linear-gradient(to bottom, #575151, #4D4949);
+}
+
+.queryform2 {
+	-fx-background-color: linear-gradient(to bottom, #4D4949, #000000); 
+}
+
+
+
+.toast {
+    -fx-padding: 10px 20px;
+    -fx-background-radius: 10px;
+    -fx-font-size: 2.5em;
+    -fx-font-weight: bold;
+	-fx-min-width: 400px;
+	-fx-min-height: 400px;
+	-fx-alignment: center;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.4), 10, 0.5, 0, 3);
+}

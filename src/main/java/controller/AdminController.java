@@ -90,6 +90,8 @@ public class AdminController {
     @FXML
     public void executeCommand() {
         String sql = commandInput.getText().trim();
+        String sqlUpper = sql.toUpperCase();
+
         if (sql.isEmpty())
         	return;
 
@@ -149,8 +151,21 @@ public class AdminController {
                 appendToConsole(strbuild.toString(), Color.LIGHTGRAY);
 
             } else {
-                int updateCount = stmt.getUpdateCount();
-                appendToConsole("OK: " + updateCount + " Zeilen betroffen.", Color.LIGHTGREEN);
+            	int updateCount = stmt.getUpdateCount();
+            	if (updateCount == -1) {
+            	    if (sqlUpper.startsWith("DROP") || sqlUpper.startsWith("CREATE") || 
+            	        sqlUpper.startsWith("ALTER") || sqlUpper.startsWith("TRUNCATE")) {
+            	        appendToConsole("DDL-Befehl erfolgreich ausgeführt.", Color.LIGHTGREEN);
+            	    } else {
+            	        appendToConsole("Befehl ausgeführt, keine Zeilen betroffen.", Color.LIGHTGREEN);
+            	    }
+            	} else {
+            	    if (sqlUpper.startsWith("DELETE") && updateCount == 0) {
+            	        appendToConsole("DELETE ausgeführt, aber keine Zeilen betroffen.", Color.ORANGE);
+            	    } else {
+            	        appendToConsole("OK: " + updateCount + " Zeilen betroffen.", Color.LIGHTGREEN);
+            	    }
+            	}
             }
 
         } catch (SQLException e) {
