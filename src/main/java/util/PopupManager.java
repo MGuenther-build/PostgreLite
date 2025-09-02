@@ -127,7 +127,7 @@ public class PopupManager {
         header8.setStyle("-fx-underline: true; -fx-font-weight: bold; -fx-font-size: 18px; -fx-fill: black;");
 
         Text body8 = new Text("www.MGuenther-build.de\n"
-                + "Ich hafte nicht für Schäden, die durch die Nutzung dieser App entstehen können. Diese App ist frei zu nutzen und nach Belieben zu verändern, sofern ich aus dieser veränderten App als Urheber entfernt bin!\n\n");
+                + "Ich hafte nicht für Schäden, die durch die Nutzung dieser App entstehen können. Diese App ist frei zu nutzen.\n\n");
         body8.setStyle("-fx-font-size: 16px; -fx-fill: black;");
 
         Text header9 = new Text("Schlussanmerkung\n");
