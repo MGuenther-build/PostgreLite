@@ -2,8 +2,12 @@ package controller;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +46,7 @@ import util.QuerySecurity;
 import util.SQLHighlighter;
 import util.Session;
 import util.ViewSwitcher;
+import util.Formatter;
 
 
 
@@ -191,21 +196,56 @@ public class QueryController {
     }
     
     
+    
     // Hilfsmethode für Typerkennung im buildTable
     private Class<?> detectColumnType(List<Map<String, Object>> rows, String columnName) {
         int maxSamples = Math.min(rows.size(), 20);
-        Class<?> type = null;
+        boolean hasDecimal = false;
+        boolean hasLong = false;
+        boolean hasInteger = false;
+
         for (int i = 0; i < maxSamples; i++) {
             Object value = rows.get(i).get(columnName);
-            if (value == null)
-            	continue;
-            if (type == null) {
-                type = value.getClass();
-            } else if (!type.equals(value.getClass())) {
-                return Object.class; // Fallback bei Uneinheitlichkeit
+            if (value == null) continue;
+
+            if (value instanceof Integer) {
+                hasInteger = true;
+            } else if (value instanceof Long) {
+                hasLong = true;
+            } else if (value instanceof BigDecimal) {
+                BigDecimal bd = (BigDecimal) value;
+                hasDecimal = hasDecimal || bd.scale() > 0;
+                if (bd.scale() <= 0) {
+                    // Prüfen, ob Integer passt
+                    if (bd.compareTo(BigDecimal.valueOf(Integer.MIN_VALUE)) >= 0 &&
+                        bd.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) <= 0) {
+                        hasInteger = true;
+                    } else {
+                        hasLong = true;
+                    }
+                } else {
+                    hasDecimal = true;
+                }
+            } else if (value instanceof Double || value instanceof Float) {
+                double d = ((Number) value).doubleValue();
+                if (d % 1 == 0 && d <= Integer.MAX_VALUE && d >= Integer.MIN_VALUE) {
+                    hasInteger = true;
+                } else if (d % 1 == 0 && d <= Long.MAX_VALUE && d >= Long.MIN_VALUE) {
+                    hasLong = true;
+                } else {
+                    hasDecimal = true;
+                }
+            } else {
+                // Nicht-Zahlen → Object
+                return value.getClass();
             }
         }
-        return type != null ? type : Object.class;
+        if (hasDecimal) return Double.class;
+        if (hasLong) return Long.class;
+        if (hasInteger) return Integer.class;
+
+        // Fallback
+        return Object.class;
     }
 
     
@@ -221,35 +261,40 @@ public class QueryController {
         List<String> columnNames = new ArrayList<>(firstRow.keySet());
 
         for (String colName : columnNames) {
-            TableColumn<Map<String, Object>, Object> col = new TableColumn<>(colName);
-            col.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(colName)));
-
-            // Typ-Erkennung
             Class<?> detectedType = detectColumnType(rows, colName);
+            String headerName = colName + " (" + detectedType.getSimpleName() + ")";
+            TableColumn<Map<String, Object>, Object> col = new TableColumn<>(headerName);
+
+            col.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(colName)));
             col.setCellFactory(new Callback<TableColumn<Map<String, Object>, Object>, TableCell<Map<String, Object>, Object>>() {
                 @Override
                 public TableCell<Map<String, Object>, Object> call(TableColumn<Map<String, Object>, Object> column) {
                     return new TableCell<Map<String, Object>, Object>() {
-                        @Override
-                        protected void updateItem(Object item, boolean empty) {
-                            super.updateItem(item, empty);
-                            if (empty || item == null) {
-                                setText(null);
-                                setStyle("");
-                            } else if (detectedType == Boolean.class) {
-                                setText((Boolean) item ? "✔" : "✘");
-                                setStyle("-fx-alignment: CENTER;");
-                            } else if (Number.class.isAssignableFrom(detectedType)) {
-                                setText(String.format("%,.2f", ((Number) item).doubleValue()));
-                                setStyle("-fx-alignment: CENTER-RIGHT;");
-                            } else if (detectedType == java.sql.Date.class || detectedType == java.time.LocalDate.class) {
-                                setText(item.toString());
-                                setStyle("-fx-alignment: CENTER;");
-                            } else {
-                                setText(item.toString());
-                                setStyle("-fx-alignment: CENTER-LEFT;");
-                            }
-                        }
+                    	@Override
+                    	protected void updateItem(Object item, boolean empty) {
+                    		super.updateItem(item, empty);
+                    		if (empty || item == null) {
+                    			setText(null);
+                    			setStyle("");
+                    			return;
+                    		}
+
+                    		String formatted = Formatter.format(item);
+                    		setText(formatted);
+
+                    		// Alignment je nach Typ
+                    		if (item instanceof Boolean) {
+                    			setStyle("-fx-alignment: CENTER;");
+                    		} else if (item instanceof Integer || item instanceof Long) {
+                    			setStyle("-fx-alignment: CENTER-RIGHT;");
+                    		} else if (item instanceof Double || item instanceof Float) {
+                    			setStyle("-fx-alignment: CENTER-RIGHT;");
+                    		} else if (item instanceof LocalDate || item instanceof LocalDateTime || item instanceof Date) {
+                    			setStyle("-fx-alignment: CENTER;");
+                    		} else {
+                    			setStyle("-fx-alignment: CENTER-LEFT;");
+                    		}
+                    	}
                     };
                 }
             });
@@ -388,7 +433,7 @@ public class QueryController {
      	   for (Map<String, Object> row : data) {
      		   converted.add(new LinkedHashMap<>(row));
      	  }
-     	  buildTableExcel(data);
+     	  buildTable(data);
      	});
 	
 	  	importTask.setOnFailed(e -> {
@@ -397,31 +442,6 @@ public class QueryController {
 	  	new Thread(importTask).start();
 	}
 
-
-    
-    private void buildTableExcel(List<Map<String, Object>> rows) {
-        resultTable.getColumns().clear();
-        resultTable.getItems().clear();
-
-        if (rows == null || rows.isEmpty()) {
-            showWarning("Problem", "Datei enthält keine lesbaren Tabellen oder ist leer.");
-            return;
-        }
-
-        Map<String, Object> firstRow = rows.get(0);
-        List<String> columnNames = new ArrayList<>(firstRow.keySet());
-
-        for (String colName : columnNames) {
-            TableColumn<Map<String, Object>, Object> col = new TableColumn<>(colName);
-            col.setCellValueFactory(data -> new ReadOnlyObjectWrapper<>(data.getValue().get(colName)));
-            resultTable.getColumns().add(col);
-        }
-
-        ObservableList<Map<String, Object>> data = FXCollections.observableArrayList(rows);
-        resultTable.setItems(data);
-        autoResizeColumns();
-    }
-    
     
     
     @FXML
@@ -512,12 +532,12 @@ public class QueryController {
 
         FadeTransition fadeIn = new FadeTransition(Duration.millis(1000), toast);
         fadeIn.setFromValue(0);
-        fadeIn.setToValue(1);
+        fadeIn.setToValue(0.9);
         
         // Meldung automatisch nach 5 Sek. weg
         PauseTransition pause = new PauseTransition(Duration.seconds(5));
         FadeTransition fadeOutAuto = new FadeTransition(Duration.millis(1000), toast);
-        fadeOutAuto.setFromValue(1);
+        fadeOutAuto.setFromValue(0.9);
         fadeOutAuto.setToValue(0);
         fadeOutAuto.setOnFinished(e -> toastPane.getChildren().remove(toast));
         

@@ -1,5 +1,6 @@
 package service;
 
+import java.math.BigDecimal;
 import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -7,38 +8,78 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import util.Normalizer;
 
 
 
 public class Query {
 
-    public List<Map<String, Object>> executeQuery(String dbName, String sql) throws SQLException {
-        List<Map<String, Object>> result = new ArrayList<>();
+	public List<Map<String, Object>> executeQuery(String dbName, String sql) throws SQLException {
+	    List<Map<String, Object>> result = new ArrayList<>();
 
-        try (Connection conn = ConnectionManager.getConnection(dbName);
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+	    try (Connection conn = ConnectionManager.getConnection(dbName);
+	         Statement stmt = conn.createStatement();
+	         ResultSet rs = stmt.executeQuery(sql)) {
 
-            ResultSetMetaData meta = rs.getMetaData();
-            int columnCount = meta.getColumnCount();
+	        ResultSetMetaData meta = rs.getMetaData();
+	        int columnCount = meta.getColumnCount();
 
-            while (rs.next()) {
-                Map<String, Object> row = new LinkedHashMap<>();
-                for (int i = 1; i <= columnCount; i++) {
-                    row.put(meta.getColumnLabel(i), rs.getObject(i));
-                }
-                result.add(row);
-            }
-        }
+	        while (rs.next()) {
+	            Map<String, Object> row = new LinkedHashMap<>();
+	            for (int i = 1; i <= columnCount; i++) {
+	                Object value = rs.getObject(i);
+	                int columnType = meta.getColumnType(i);
 
-        return result;
-    }
+	                if (value instanceof BigDecimal) {
+	                	BigDecimal bd = (BigDecimal) value;
+	                    switch (columnType) {
+	                        case Types.INTEGER:
+	                        case Types.SMALLINT:
+	                        case Types.TINYINT:
+	                            value = bd.intValue();
+	                            break;
+	                        case Types.BIGINT:
+	                            value = bd.longValue();
+	                            break;
+	                        case Types.NUMERIC:
+	                        case Types.DECIMAL:
+	                            if (bd.stripTrailingZeros().scale() <= 0) {
+	                                // Ganzzahl ohne Nachkommastellen
+	                                if (bd.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) <= 0 &&
+	                                    bd.compareTo(BigDecimal.valueOf(Integer.MIN_VALUE)) >= 0) {
+	                                    value = bd.intValue();
+	                                } else {
+	                                    value = bd.longValue();
+	                                }
+	                            } else {
+	                                value = bd.doubleValue();
+	                            }
+	                            break;
+	                        default:
+	                            value = Normalizer.normalize(bd);
+	                    }
+	                } else {
+	                    value = Normalizer.normalize(value);
+	                }
 
+	                row.put(meta.getColumnLabel(i), value);
+	            }
+	            result.add(row);
+	        }
+	    }
+
+	    return result;
+	}
+
+
+    
+    
     public int executeUpdate(String dbName, String sql) throws SQLException {
         try (Connection conn = ConnectionManager.getConnection(dbName);
              Statement stmt = conn.createStatement()) {
@@ -147,7 +188,18 @@ public class Query {
         if (rows == null || rows.isEmpty())
             return;
 
-        Map<String, String> columnTypes = detectColumnTypes(rows);
+     // Normalisieren der Daten
+        List<Map<String, Object>> normalizedRows = rows.stream()
+            .map(row -> row.entrySet().stream()
+                .collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    e -> Normalizer.normalize(e.getValue()),
+                    (a,b) -> b,
+                    LinkedHashMap::new
+                ))
+            ) .collect(Collectors.toList());
+        
+        Map<String, String> columnTypes = detectColumnTypes(normalizedRows);
 
         StringBuilder sb = new StringBuilder("CREATE TABLE IF NOT EXISTS ");
         sb.append(tableName).append(" (");

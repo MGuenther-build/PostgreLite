@@ -413,9 +413,9 @@ public class PopupManager {
 
         VBox layout = new VBox(15,
             header,
+            new HBox(10, chooseFileBtn, fileLabel),
             new Label("Tabellenname:"), tableNameField,
             new Label("Startzelle:"), startCellField,
-            new HBox(10, chooseFileBtn, fileLabel),
             previewBtn,
             previewTable,
             new HBox(10, importBtn, cancelBtn)
