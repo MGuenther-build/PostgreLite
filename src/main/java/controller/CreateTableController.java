@@ -371,9 +371,9 @@ public class CreateTableController {
             showAlert(Alert.AlertType.WARNING, "Eingabefehler", "Bitte geben Sie einen Tabellennamen ein.");
             return;
         }
-        
-        if (columnNameField.getText().trim().isEmpty() || dataTypeComboBox.getValue() == null) {
-            showAlert(Alert.AlertType.WARNING, "Eingabefehler", "Spaltenname und Datentyp sind Pflicht.");
+
+        if (columnData.isEmpty()) {
+            showAlert(Alert.AlertType.WARNING, "Eingabefehler", "Bitte fügen Sie mindestens eine Spalte hinzu.");
             return;
         }
 

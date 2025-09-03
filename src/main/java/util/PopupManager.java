@@ -15,6 +15,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -102,7 +103,7 @@ public class PopupManager {
 
         Text body4 = new Text("In diesem Bereich können Sie aus den Datenbanken Ihre Datenbank wählen, die in ihr vorhandenen Tabellen einsehen und anschließend freihändig fast jede Art von Datenabfrage und Datenbearbeitung durchführen. Es ist in diesem Bereich nicht möglich Strukturbefehle wie Delete, Drop und Truncate durchzuführen oder Nutzer anlegen bzw. Nutzerrechte auszusprechen. Dafür bitte den Adminbereich nutzen!\n\n"
                 + "Bitte beachten Sie, dass aus Sicherheitsgründen (SQL-Injektion!) Befehle ohne \";\" (= Semikolon) zu beenden sind.\n\n"
-        		+"Ein Import von Excel ist möglich.\n\n");
+        		+"Ein Import von Excel und ein Export der SQL-Ausgabe in Excel oder CSV ist möglich.\n\n");
         body4.setStyle("-fx-font-size: 16px; -fx-fill: black;");
 
         Text header5 = new Text("Adminbereich\n");
@@ -237,10 +238,21 @@ public class PopupManager {
     public static void openAdminZone() {
         Alert alert = new Alert(Alert.AlertType.WARNING);
         alert.setTitle("Adminbereich");
-        alert.setContentText(
+
+        // TextArea für automatischen Zeilenumbruch und flexible Größe
+        TextArea textArea = new TextArea(
             "Im Adminbereich ist jeder Befehl erlaubt. Verwenden Sie dieses Tool nur, wenn Sie wissen, was Sie tun!"
         );
+        textArea.setWrapText(true);
+        textArea.setEditable(false);
+        textArea.setFocusTraversable(false);
+        textArea.setStyle("-fx-background-color: transparent; -fx-font-size: 13px;");
+        textArea.setMaxWidth(Double.MAX_VALUE);
+        textArea.setMaxHeight(Double.MAX_VALUE);
+        
+        alert.getDialogPane().setContent(textArea);
 
+        // Buttons setzen
         ButtonType okButton = new ButtonType("Ok, verstanden");
         ButtonType cancelButton = new ButtonType("Abbrechen", ButtonBar.ButtonData.CANCEL_CLOSE);
         alert.getButtonTypes().setAll(okButton, cancelButton);
@@ -248,7 +260,6 @@ public class PopupManager {
         Optional<ButtonType> result = alert.showAndWait();
         if (result.isPresent() && result.get() == okButton) {
             try {
-                // AdminZone.fxml laden
                 FXMLLoader loader = new FXMLLoader(PopupManager.class.getResource("/gui_views/adminZone.fxml"));
                 Parent root = loader.load();
 
@@ -262,7 +273,7 @@ public class PopupManager {
                 stage.setX((screenBounds.getWidth() - stage.getWidth()) / 2);
                 stage.setY((screenBounds.getHeight() - stage.getHeight()) / 2);
 
-                stage.initModality(Modality.APPLICATION_MODAL); // blockiert Hauptfenster
+                stage.initModality(Modality.APPLICATION_MODAL);
                 stage.show();
 
             } catch (IOException e) {

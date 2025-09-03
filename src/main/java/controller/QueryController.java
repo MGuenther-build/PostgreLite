@@ -265,6 +265,7 @@ public class QueryController {
             String headerName = colName + " (" + detectedType.getSimpleName() + ")";
             TableColumn<Map<String, Object>, Object> col = new TableColumn<>(headerName);
 
+            col.setId(colName); // ID-Setting für Export zur Identifikation wichtig!
             col.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(colName)));
             col.setCellFactory(new Callback<TableColumn<Map<String, Object>, Object>, TableCell<Map<String, Object>, Object>>() {
                 @Override
@@ -463,10 +464,10 @@ public class QueryController {
             showWarning("Info", "Datei ist leer.");
             return;
         }
-
+        // Holt die Daten-ID für Export aus dem createTable (columnKey, getId)
         List<String> headers = resultTable.getColumns().stream()
-            .map(TableColumn::getText)
-            .toList();
+        		.map(col -> col.getId())
+        		.toList();
 
         ObservableList<ObservableList<String>> data = FXCollections.observableArrayList();
         for (Map<String, Object> row : resultTable.getItems()) {
