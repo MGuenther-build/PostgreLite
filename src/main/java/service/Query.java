@@ -20,8 +20,10 @@ import util.Normalizer;
 
 public class Query {
 
-	public List<Map<String, Object>> executeQuery(String dbName, String sql) throws SQLException {
+	public QueryResult executeQuery(String dbName, String sql) throws SQLException {
 	    List<Map<String, Object>> result = new ArrayList<>();
+	    List<String> columnNames = new ArrayList<>();
+	    List<String> sqlTypes = new ArrayList<>();
 
 	    try (Connection conn = ConnectionManager.getConnection(dbName);
 	         Statement stmt = conn.createStatement();
@@ -30,6 +32,13 @@ public class Query {
 	        ResultSetMetaData meta = rs.getMetaData();
 	        int columnCount = meta.getColumnCount();
 
+	        // Spaltennamen + SQL-Typen kopieren
+	        for (int i = 1; i <= columnCount; i++) {
+	            columnNames.add(meta.getColumnLabel(i));
+	            sqlTypes.add(meta.getColumnTypeName(i));
+	        }
+
+	        // Daten auslesen
 	        while (rs.next()) {
 	            Map<String, Object> row = new LinkedHashMap<>();
 	            for (int i = 1; i <= columnCount; i++) {
@@ -37,7 +46,7 @@ public class Query {
 	                int columnType = meta.getColumnType(i);
 
 	                if (value instanceof BigDecimal) {
-	                	BigDecimal bd = (BigDecimal) value;
+	                    BigDecimal bd = (BigDecimal) value;
 	                    switch (columnType) {
 	                        case Types.INTEGER:
 	                        case Types.SMALLINT:
@@ -50,9 +59,8 @@ public class Query {
 	                        case Types.NUMERIC:
 	                        case Types.DECIMAL:
 	                            if (bd.stripTrailingZeros().scale() <= 0) {
-	                                // Ganzzahl ohne Nachkommastellen
-	                                if (bd.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) <= 0 &&
-	                                    bd.compareTo(BigDecimal.valueOf(Integer.MIN_VALUE)) >= 0) {
+	                                if (bd.compareTo(BigDecimal.valueOf(Integer.MIN_VALUE)) >= 0 &&
+	                                    bd.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) <= 0) {
 	                                    value = bd.intValue();
 	                                } else {
 	                                    value = bd.longValue();
@@ -67,16 +75,13 @@ public class Query {
 	                } else {
 	                    value = Normalizer.normalize(value);
 	                }
-
 	                row.put(meta.getColumnLabel(i), value);
 	            }
 	            result.add(row);
 	        }
 	    }
-
-	    return result;
+	    return new QueryResult(result, columnNames, sqlTypes);
 	}
-
 
     
     

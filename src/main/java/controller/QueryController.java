@@ -2,7 +2,6 @@ package controller;
 
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -41,12 +40,14 @@ import service.Database;
 import service.Query;
 import service.Excelimport;
 import service.ExportData;
+import service.QueryResult;
 import util.PopupManager;
 import util.QuerySecurity;
 import util.SQLHighlighter;
 import util.Session;
 import util.ViewSwitcher;
 import util.Formatter;
+import util.SQLTypeMapper;
 
 
 
@@ -168,16 +169,19 @@ public class QueryController {
         }
 
         try {
-            if (sql.toLowerCase().startsWith("select")) {
-                List<Map<String, Object>> results =
-                        queryService.executeQuery(database, sql);
-                buildTable(results);
+        	if (sql.toLowerCase().startsWith("select")) {
+        	    QueryResult qr = queryService.executeQuery(database, sql);
+        	    List<Map<String, Object>> results = qr.getRows();
+        	    List<String> columnNames = qr.getColumnNames();
+        	    List<String> sqlTypes = qr.getSqlTypes();
 
-                if (results.isEmpty()) {
-                    showInfo("Info", "Keine Ergebnisse gefunden.");
-                }
-                historyBoard.setExpanded(false);
-                
+        	    buildTable(results, columnNames, sqlTypes);
+
+        	    if (results.isEmpty()) {
+        	        showInfo("Info", "Keine Ergebnisse gefunden.");
+        	    }
+        	    historyBoard.setExpanded(false);
+
             } else {
                 int updateCount = queryService.executeUpdate(database, sql);
                 showInfo("Erfolg", updateCount + " Zeilen betroffen.");
@@ -185,71 +189,66 @@ public class QueryController {
                 resultTable.getItems().clear();
                 historyBoard.setExpanded(false);
             }
-            
+
         } catch (SQLException e) {
             showError("SQL-Fehler", e.getMessage());
         }
-        
+
         if (!sql.isBlank() && !queryHistory.contains(sql)) {
             queryHistory.add(sql);
         }
     }
-    
-    
-    
-    // Hilfsmethode für Typerkennung im buildTable
-    private Class<?> detectColumnType(List<Map<String, Object>> rows, String columnName) {
-        int maxSamples = Math.min(rows.size(), 20);
-        boolean hasDecimal = false;
-        boolean hasLong = false;
-        boolean hasInteger = false;
 
-        for (int i = 0; i < maxSamples; i++) {
-            Object value = rows.get(i).get(columnName);
-            if (value == null) continue;
+    
+    
+    private void buildTable(List<Map<String, Object>> rows, List<String> columnNames, List<String> sqlTypes) {
+        resultTable.getColumns().clear();
+        resultTable.getItems().clear();
 
-            if (value instanceof Integer) {
-                hasInteger = true;
-            } else if (value instanceof Long) {
-                hasLong = true;
-            } else if (value instanceof BigDecimal) {
-                BigDecimal bd = (BigDecimal) value;
-                hasDecimal = hasDecimal || bd.scale() > 0;
-                if (bd.scale() <= 0) {
-                    // Prüfen, ob Integer passt
-                    if (bd.compareTo(BigDecimal.valueOf(Integer.MIN_VALUE)) >= 0 &&
-                        bd.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) <= 0) {
-                        hasInteger = true;
-                    } else {
-                        hasLong = true;
+        if (rows == null || rows.isEmpty())
+        	return;
+
+        for (int i = 0; i < columnNames.size(); i++) {
+            final String colName = columnNames.get(i);
+            final String typeName = SQLTypeMapper.friendlySqlType(sqlTypes.get(i));
+            String headerName = colName + " (" + typeName + ")";
+
+            TableColumn<Map<String, Object>, Object> col = new TableColumn<>(headerName);
+            col.setId(colName); // wichtig für Export
+            col.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(colName)));
+            col.setCellFactory(column -> new TableCell<Map<String, Object>, Object>() {
+                @Override
+                protected void updateItem(Object item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                        setStyle("");
+                        return;
                     }
-                } else {
-                    hasDecimal = true;
+                    setText(Formatter.format(item));
+
+                    if (item instanceof Boolean) {
+                        setStyle("-fx-alignment: CENTER;");
+                    } else if (item instanceof Integer || item instanceof Long) {
+                        setStyle("-fx-alignment: CENTER-RIGHT;");
+                    } else if (item instanceof Double || item instanceof Float) {
+                        setStyle("-fx-alignment: CENTER-RIGHT;");
+                    } else if (item instanceof LocalDate || item instanceof LocalDateTime || item instanceof Date) {
+                        setStyle("-fx-alignment: CENTER;");
+                    } else {
+                        setStyle("-fx-alignment: CENTER-LEFT;");
+                    }
                 }
-            } else if (value instanceof Double || value instanceof Float) {
-                double d = ((Number) value).doubleValue();
-                if (d % 1 == 0 && d <= Integer.MAX_VALUE && d >= Integer.MIN_VALUE) {
-                    hasInteger = true;
-                } else if (d % 1 == 0 && d <= Long.MAX_VALUE && d >= Long.MIN_VALUE) {
-                    hasLong = true;
-                } else {
-                    hasDecimal = true;
-                }
-            } else {
-                // Nicht-Zahlen → Object
-                return value.getClass();
-            }
+            });
+            resultTable.getColumns().add(col);
         }
-        if (hasDecimal) return Double.class;
-        if (hasLong) return Long.class;
-        if (hasInteger) return Integer.class;
-
-        // Fallback
-        return Object.class;
+        resultTable.setItems(FXCollections.observableArrayList(rows));
+        autoResizeColumns();
     }
-
     
     
+    
+    // Methodenüberladung (zweite buildTable) für Excel-Import für ResultSetMetaData
     private void buildTable(List<Map<String, Object>> rows) {
         resultTable.getColumns().clear();
         resultTable.getItems().clear();
@@ -261,52 +260,42 @@ public class QueryController {
         List<String> columnNames = new ArrayList<>(firstRow.keySet());
 
         for (String colName : columnNames) {
-            Class<?> detectedType = detectColumnType(rows, colName);
-            String headerName = colName + " (" + detectedType.getSimpleName() + ")";
-            TableColumn<Map<String, Object>, Object> col = new TableColumn<>(headerName);
-
-            col.setId(colName); // ID-Setting für Export zur Identifikation wichtig!
+            TableColumn<Map<String, Object>, Object> col = new TableColumn<>(colName);
+            col.setId(colName); // wichtig für Export
             col.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(colName)));
-            col.setCellFactory(new Callback<TableColumn<Map<String, Object>, Object>, TableCell<Map<String, Object>, Object>>() {
+
+            col.setCellFactory(column -> new TableCell<Map<String, Object>, Object>() {
                 @Override
-                public TableCell<Map<String, Object>, Object> call(TableColumn<Map<String, Object>, Object> column) {
-                    return new TableCell<Map<String, Object>, Object>() {
-                    	@Override
-                    	protected void updateItem(Object item, boolean empty) {
-                    		super.updateItem(item, empty);
-                    		if (empty || item == null) {
-                    			setText(null);
-                    			setStyle("");
-                    			return;
-                    		}
+                protected void updateItem(Object item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                        setStyle("");
+                        return;
+                    }
 
-                    		String formatted = Formatter.format(item);
-                    		setText(formatted);
+                    setText(Formatter.format(item));
 
-                    		// Alignment je nach Typ
-                    		if (item instanceof Boolean) {
-                    			setStyle("-fx-alignment: CENTER;");
-                    		} else if (item instanceof Integer || item instanceof Long) {
-                    			setStyle("-fx-alignment: CENTER-RIGHT;");
-                    		} else if (item instanceof Double || item instanceof Float) {
-                    			setStyle("-fx-alignment: CENTER-RIGHT;");
-                    		} else if (item instanceof LocalDate || item instanceof LocalDateTime || item instanceof Date) {
-                    			setStyle("-fx-alignment: CENTER;");
-                    		} else {
-                    			setStyle("-fx-alignment: CENTER-LEFT;");
-                    		}
-                    	}
-                    };
+                    if (item instanceof Boolean) {
+                        setStyle("-fx-alignment: CENTER;");
+                    } else if (item instanceof Integer || item instanceof Long || item instanceof Double || item instanceof Float) {
+                        setStyle("-fx-alignment: CENTER-RIGHT;");
+                    } else if (item instanceof LocalDate || item instanceof LocalDateTime || item instanceof Date) {
+                        setStyle("-fx-alignment: CENTER;");
+                    } else {
+                        setStyle("-fx-alignment: CENTER-LEFT;");
+                    }
                 }
             });
+
             resultTable.getColumns().add(col);
         }
-        ObservableList<Map<String, Object>> data = FXCollections.observableArrayList(rows);
-        resultTable.setItems(data);
+
+        resultTable.setItems(FXCollections.observableArrayList(rows));
         autoResizeColumns();
     }
-    
-    
+
+
     
     private void addDeleteColumnSQLHistory() {
         boolean exists = sqlHistory.getColumns().stream()
