@@ -205,7 +205,7 @@ public class CreateTableController {
 	    columnNameColumn.setCellFactory(TextFieldTableCell.forTableColumn());
 	    columnNameColumn.setEditable(true);
 
-	    dataTypeColumn.setCellValueFactory(cellData -> cellData.getValue().baseTypeProperty());
+	    dataTypeColumn.setCellValueFactory(cellData -> cellData.getValue().fullTypeProperty());
 	    dataTypeColumn.setCellFactory(TextFieldTableCell.forTableColumn());
 	    dataTypeColumn.setEditable(true);
 

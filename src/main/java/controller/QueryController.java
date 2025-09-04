@@ -5,9 +5,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.fxmisc.flowless.VirtualizedScrollPane;
@@ -22,6 +20,7 @@ import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
@@ -178,7 +177,7 @@ public class QueryController {
         	    buildTable(results, columnNames, sqlTypes);
 
         	    if (results.isEmpty()) {
-        	        showInfo("Info", "Keine Ergebnisse gefunden.");
+        	        showWarning("Info", "Keine Spalteneinträge gefunden.");
         	    }
         	    historyBoard.setExpanded(false);
 
@@ -205,16 +204,23 @@ public class QueryController {
         resultTable.getColumns().clear();
         resultTable.getItems().clear();
 
-        if (rows == null || rows.isEmpty())
-        	return;
-
         for (int i = 0; i < columnNames.size(); i++) {
             final String colName = columnNames.get(i);
             final String typeName = SQLTypeMapper.friendlySqlType(sqlTypes.get(i));
-            String headerName = colName + " (" + typeName + ")";
+            String headerType = typeName; // z.B. VARCHAR(100) oder TEXT
 
-            TableColumn<Map<String, Object>, Object> col = new TableColumn<>(headerName);
-            col.setId(colName); // wichtig für Export
+            TableColumn<Map<String, Object>, Object> col = new TableColumn<>();
+            Label nameLabel = new Label(colName);
+            nameLabel.setStyle("-fx-text-fill: black;");
+
+            Label typeLabel = new Label(headerType);
+            typeLabel.setStyle("-fx-text-fill: gray;");
+
+            VBox header = new VBox(nameLabel, typeLabel);
+            header.setAlignment(Pos.CENTER);
+            col.setGraphic(header);
+            
+            col.setId(colName);
             col.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(colName)));
             col.setCellFactory(column -> new TableCell<Map<String, Object>, Object>() {
                 @Override
@@ -230,67 +236,18 @@ public class QueryController {
                     if (item instanceof Boolean) {
                         setStyle("-fx-alignment: CENTER;");
                     } else if (item instanceof Integer || item instanceof Long) {
-                        setStyle("-fx-alignment: CENTER-RIGHT;");
+                        setStyle("-fx-alignment: CENTER;");
                     } else if (item instanceof Double || item instanceof Float) {
-                        setStyle("-fx-alignment: CENTER-RIGHT;");
+                        setStyle("-fx-alignment: CENTER;");
                     } else if (item instanceof LocalDate || item instanceof LocalDateTime || item instanceof Date) {
                         setStyle("-fx-alignment: CENTER;");
                     } else {
-                        setStyle("-fx-alignment: CENTER-LEFT;");
+                        setStyle("-fx-alignment: CENTER;");
                     }
                 }
             });
             resultTable.getColumns().add(col);
         }
-        resultTable.setItems(FXCollections.observableArrayList(rows));
-        autoResizeColumns();
-    }
-    
-    
-    
-    // Methodenüberladung (zweiter buildTable) für Excel-Import für ResultSetMetaData
-    private void buildTable(List<Map<String, Object>> rows) {
-        resultTable.getColumns().clear();
-        resultTable.getItems().clear();
-
-        if (rows == null || rows.isEmpty())
-            return;
-
-        Map<String, Object> firstRow = rows.get(0);
-        List<String> columnNames = new ArrayList<>(firstRow.keySet());
-
-        for (String colName : columnNames) {
-            TableColumn<Map<String, Object>, Object> col = new TableColumn<>(colName);
-            col.setId(colName); // wichtig für Export
-            col.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(colName)));
-
-            col.setCellFactory(column -> new TableCell<Map<String, Object>, Object>() {
-                @Override
-                protected void updateItem(Object item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (empty || item == null) {
-                        setText(null);
-                        setStyle("");
-                        return;
-                    }
-
-                    setText(Formatter.format(item));
-
-                    if (item instanceof Boolean) {
-                        setStyle("-fx-alignment: CENTER;");
-                    } else if (item instanceof Integer || item instanceof Long || item instanceof Double || item instanceof Float) {
-                        setStyle("-fx-alignment: CENTER-RIGHT;");
-                    } else if (item instanceof LocalDate || item instanceof LocalDateTime || item instanceof Date) {
-                        setStyle("-fx-alignment: CENTER;");
-                    } else {
-                        setStyle("-fx-alignment: CENTER-LEFT;");
-                    }
-                }
-            });
-
-            resultTable.getColumns().add(col);
-        }
-
         resultTable.setItems(FXCollections.observableArrayList(rows));
         autoResizeColumns();
     }
@@ -335,15 +292,15 @@ public class QueryController {
         if (input == null) {
         	return;
         }
+        
+        String tableName = input.get("tableName").trim();
+        String startCell = input.get("startCell").trim();
+        File selectedFile = new File(input.get("filePath"));
+        
         if (input.get("tableName").isBlank() || input.get("startCell").isBlank()) {
             showWarning("Ungültige Eingabe", "Tabellenname und Startzelle dürfen nicht leer sein.");
             return;
         }
-
-        String tableName = input.get("tableName").trim();
-        String startCell = input.get("startCell").trim();
-        
-        File selectedFile = new File(input.get("filePath"));
 
         // Zellformat
         if (!startCell.matches("^[A-Z]+[0-9]+$")) {
@@ -352,19 +309,16 @@ public class QueryController {
         }
 
         // Daten einlesen
-        Excelimport importer = new Excelimport();
-        List<Map<String, Object>> excelData;
+        final Excelimport importer = new Excelimport();
+        final QueryResult result;
         try {
-            excelData = importer.readExcel(selectedFile, startCell);
-        } catch (RuntimeException ex) {
-            showError("Fehlerhafte Datei", ex.getMessage());
-            return;
-        } catch (IOException ex) {
-            showError("Dateifehler", "Die Datei konnte nicht gelesen werden.");
+            result = importer.readExcel(selectedFile, startCell);
+        } catch (IOException | RuntimeException ex) {
+            showError("Fehler beim Einlesen der Datei", ex.getMessage());
             return;
         }
 
-        if (excelData.isEmpty()) {
+        if (result.getRows().isEmpty()) {
             showWarning("Leere Datei", "Keine Daten gefunden.");
             return;
         }
@@ -388,49 +342,47 @@ public class QueryController {
             showWarning("Tabelle existiert", "Die Tabelle '" + tableName + "' existiert bereits.\nBitte anderen Namen wählen.");
             return;
         }
-        startExcelImport(database, tableName, excelData);
+        startExcelImport(database, tableName, result);
     }
 
     
     
-    // Import starten
-    private void startExcelImport(String dbName, String tableName, List<Map<String, Object>> data) {
+    private void startExcelImport(String dbName, String tableName, QueryResult result) {
 
-     	Task<Void> importTask = new Task<Void>() {
-        	@Override
-         	protected Void call() throws Exception {
-            	queryService.createTableFromExcel(dbName, tableName, data);
+        Task<Void> importTask = new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                // Tabelle mit den Typen aus QueryResult erstellen
+                queryService.createTableFromExcel(dbName, tableName, result);
 
-              	int total = data.size();
-             	int processed = 0;
+                int total = result.getRows().size();
+                int processed = 0;
 
-              	for (int i = 0; i < total; i += 100) {
-                  	int end = Math.min(i + 100, total);
-                  	List<Map<String, Object>> batch = data.subList(i, end);
-                  	queryService.insertData(dbName, tableName, batch);
-                  	
-                  	processed += batch.size();
-                	updateProgress(processed, total);
-             	}
+                // Daten in Batches einfügen
+                for (int i = 0; i < total; i += 100) {
+                    int end = Math.min(i + 100, total);
+                    List<Map<String, Object>> batch = result.getRows().subList(i, end);
+                    queryService.insertData(dbName, tableName, batch);
+                    processed += batch.size();
+                    updateProgress(processed, total);
+                }
                 return null;
-        	}
-     	};
+            }
+        };
 
-     	importTask.setOnSucceeded(e -> {
-     	    showInfo("Import erfolgreich", "Tabelle '" + tableName + "' wurde erstellt.");
-     	    
-     	   List<Map<String, Object>> converted = new ArrayList<>();
-     	   for (Map<String, Object> row : data) {
-     		   converted.add(new LinkedHashMap<>(row));
-     	  }
-     	  buildTable(data);
-     	});
-	
-	  	importTask.setOnFailed(e -> {
-	     	showError("Import fehlgeschlagen", importTask.getException().getMessage());
-	  	});
-	  	new Thread(importTask).start();
-	}
+        importTask.setOnSucceeded(e -> {
+            showInfo("Import erfolgreich", "Tabelle '" + tableName + "' erstellt.");
+            // TableView anzeigen mit zweizeiligem Header
+            buildTable(result.getRows(), result.getColumnNames(), result.getSqlTypes());
+        });
+
+        importTask.setOnFailed(e -> {
+            showError("Import fehlgeschlagen", importTask.getException().getMessage());
+        });
+
+        new Thread(importTask).start();
+    }
+
 
     
     

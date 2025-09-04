@@ -35,7 +35,21 @@ public class Query {
 	        // Spaltennamen + SQL-Typen kopieren
 	        for (int i = 1; i <= columnCount; i++) {
 	            columnNames.add(meta.getColumnLabel(i));
-	            sqlTypes.add(meta.getColumnTypeName(i));
+	            String typeName = meta.getColumnTypeName(i);
+	            int precision = meta.getPrecision(i);          // z. B. 100 bei VARCHAR(100)
+	            int scale = meta.getScale(i);                  // z. B. 2 bei NUMERIC(10,2)
+	            
+	            String fullType;
+	            if (precision > 0) {
+	                if (scale > 0) {
+	                    fullType = typeName + "(" + precision + "," + scale + ")";
+	                } else {
+	                    fullType = typeName + "(" + precision + ")";
+	                }
+	            } else {
+	                fullType = typeName;
+	            }
+	            sqlTypes.add(fullType);
 	        }
 
 	        // Daten auslesen
@@ -151,66 +165,22 @@ public class Query {
         }
         return false;
     }
+
     
     
-    
-    private Map<String, String> detectColumnTypes(List<Map<String, Object>> rows) {
-        Map<String, String> types = new LinkedHashMap<>();
+    public void createTableFromExcel(String dbName, String tableName, QueryResult result) throws SQLException {
+        List<Map<String, Object>> rows = result.getRows();
+        List<String> columnNames = result.getColumnNames();
+        List<String> sqlTypes = result.getSqlTypes();
 
-        if (rows.isEmpty())
-            return types;
-
-        for (String column : rows.get(0).keySet()) {
-            Class<?> type = null;
-
-            for (Map<String, Object> row : rows) {
-                Object value = row.get(column);
-                if (value != null) {
-                    type = value.getClass();
-                    break;
-                }
-            }
-
-            if (type == null) {
-                types.put(column, "TEXT"); // Fallback
-            } else if (Number.class.isAssignableFrom(type)) {
-                types.put(column, "REAL");
-            } else if (type == Boolean.class) {
-                types.put(column, "BOOLEAN");
-            } else if (type == java.sql.Date.class || type == java.time.LocalDate.class) {
-                types.put(column, "DATE");
-            } else {
-                types.put(column, "TEXT");
-            }
-        }
-
-        return types;
-    }
-       
-    
-    
-    public void createTableFromExcel(String dbName, String tableName, List<Map<String, Object>> rows) throws SQLException {
         if (rows == null || rows.isEmpty())
-            return;
-
-     // Normalisieren der Daten
-        List<Map<String, Object>> normalizedRows = rows.stream()
-            .map(row -> row.entrySet().stream()
-                .collect(Collectors.toMap(
-                    Map.Entry::getKey,
-                    e -> Normalizer.normalize(e.getValue()),
-                    (a,b) -> b,
-                    LinkedHashMap::new
-                ))
-            ) .collect(Collectors.toList());
-        
-        Map<String, String> columnTypes = detectColumnTypes(normalizedRows);
+        	return;
 
         StringBuilder sb = new StringBuilder("CREATE TABLE IF NOT EXISTS ");
         sb.append(tableName).append(" (");
 
-        for (Map.Entry<String, String> entry : columnTypes.entrySet()) {
-            sb.append("\"").append(entry.getKey()).append("\" ").append(entry.getValue()).append(", ");
+        for (int i = 0; i < columnNames.size(); i++) {
+            sb.append("\"").append(columnNames.get(i)).append("\" ").append(sqlTypes.get(i)).append(", ");
         }
 
         sb.setLength(sb.length() - 2);

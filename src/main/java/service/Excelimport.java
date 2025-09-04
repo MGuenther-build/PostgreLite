@@ -12,8 +12,10 @@ import java.util.*;
 
 public class Excelimport {
 	
-	public List<Map<String, Object>> readExcel(File file, String startCellRef) throws IOException {
+	public QueryResult readExcel(File file, String startCellRef) throws IOException {
 	    List<Map<String, Object>> rows = new ArrayList<>();
+	    List<String> columnNames = new ArrayList<>();
+	    List<String> sqlTypes = new ArrayList<>();
 
 	    int startRow = getRowIndex(startCellRef);
 	    int startCol = getColIndex(startCellRef);
@@ -23,41 +25,62 @@ public class Excelimport {
 
 	        Sheet sheet = workbook.getSheetAt(0);
 	        Row headerRow = sheet.getRow(startRow);
-	        if (headerRow == null) {
+	        if (headerRow == null) 
 	            throw new RuntimeException("Keine Header-Zeile gefunden bei " + startCellRef);
-	        }
 
-	        List<String> headers = new ArrayList<>();
 	        for (int col = startCol; col < headerRow.getLastCellNum(); col++) {
 	            Cell cell = headerRow.getCell(col);
-	            headers.add(cell != null ? String.valueOf(getCellValue(cell)) : "Spalte_" + col);
+	            String header = cell != null ? String.valueOf(getCellValue(cell)) : "Spalte_" + col;
+	            columnNames.add(header);
+	            sqlTypes.add("TEXT"); // default
 	        }
 
+	        // Daten sammeln
 	        for (int rowIndex = startRow + 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
 	            Row row = sheet.getRow(rowIndex);
 	            if (row == null)
-	                continue;
+	            	continue;
 
 	            Map<String, Object> rowData = new LinkedHashMap<>();
-	            for (int col = 0; col < headers.size(); col++) {
+	            for (int col = 0; col < columnNames.size(); col++) {
 	                Cell cell = row.getCell(startCol + col);
-	                String header = headers.get(col);
-
-	                Object value;
-	                if (header.equalsIgnoreCase("PLZ") && cell != null && cell.getCellType() == CellType.NUMERIC) {
-	                    value = String.format("%.0f", cell.getNumericCellValue()); // PLZ als String ohne Nachkommastellen
-	                } else {
-	                    value = getCellValue(cell);
-	                }
-	                
+	                Object value = getCellValue(cell);
 	                value = Normalizer.normalize(value);
-	                rowData.put(header, value);
+	                rowData.put(columnNames.get(col), value);
+
+	                // SQL-Typ anhand der ersten Datenzeile bestimmen
+	                if (rowIndex == startRow + 1 && cell != null) {
+	                    switch (cell.getCellType()) {
+	                    case STRING:
+	                        String strVal = cell.getStringCellValue();
+	                        int length = strVal != null ? strVal.length() : 255;
+	                        int step = 50; 
+	                        length = ((length + step - 1) / step) * step;
+	                        length = Math.max(1, Math.min(length, 65535));
+	                        sqlTypes.set(col, "VARCHAR(" + length + ")");
+	                        break;
+	                        case NUMERIC:
+	                            if (DateUtil.isCellDateFormatted(cell)) 
+	                                sqlTypes.set(col, "DATE");
+	                            else 
+	                                sqlTypes.set(col, "NUMERIC");
+	                            break;
+	                        case BOOLEAN:
+	                            sqlTypes.set(col, "BOOLEAN");
+	                            break;
+	                        default:
+	                            sqlTypes.set(col, "TEXT");
+	                    }
+	                }
 	            }
 	            rows.add(rowData);
 	        }
 	    }
-	    return rows;
+
+	    return new QueryResult(rows, columnNames, sqlTypes);
 	}
+
+
 	
 	private int getRowIndex(String cellRef) {
 	    return Integer.parseInt(cellRef.replaceAll("[A-Z]", "")) - 1;

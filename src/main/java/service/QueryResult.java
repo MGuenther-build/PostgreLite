@@ -10,8 +10,8 @@ import java.util.Map;
  */
 public class QueryResult {
     private final List<Map<String, Object>> rows;
-    private final List<String> columnNames;   // Spaltennamen
-    private final List<String> sqlTypes;      // SQL-Typen z.B. VARCHAR, INTEGER
+    private final List<String> columnNames;
+    private final List<String> sqlTypes;
 
     public QueryResult(List<Map<String, Object>> rows, List<String> columnNames, List<String> sqlTypes) {
         this.rows = rows;

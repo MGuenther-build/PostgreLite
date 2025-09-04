@@ -33,6 +33,8 @@ import javafx.stage.StageStyle;
 import javafx.stage.Window;
 import controller.DBConfigController;
 import service.Excelimport;
+import service.QueryResult;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -375,17 +377,19 @@ public class PopupManager {
 
         Button previewBtn = new Button("Vorschau laden");
         previewBtn.setOnAction(e -> {
-            if (selectedFile[0] == null || startCellField.getText().isBlank()) return;
+            if (selectedFile[0] == null || startCellField.getText().isBlank())
+            	return;
             try {
-            	List<Map<String, Object>> rawData = new Excelimport().readExcel(selectedFile[0], startCellField.getText().trim());
-            	List<Map<String, String>> data = new ArrayList<>();
-            	for (Map<String, Object> row : rawData) {
-            	    Map<String, String> stringRow = new LinkedHashMap<>();
-            	    for (Map.Entry<String, Object> entry : row.entrySet()) {
-            	        stringRow.put(entry.getKey(), entry.getValue() != null ? entry.getValue().toString() : "");
-            	    }
-            	    data.add(stringRow);
-            	}
+                QueryResult result = new Excelimport().readExcel(selectedFile[0], startCellField.getText().trim());
+                List<Map<String, Object>> rawData = result.getRows();
+                List<Map<String, String>> data = new ArrayList<>();
+                for (Map<String, Object> row : rawData) {
+                    Map<String, String> stringRow = new LinkedHashMap<>();
+                    for (Map.Entry<String, Object> entry : row.entrySet()) {
+                        stringRow.put(entry.getKey(), entry.getValue() != null ? entry.getValue().toString() : "");
+                    }
+                    data.add(stringRow);
+                }
                 previewTable.getColumns().clear();
                 previewTable.getItems().clear();
 

@@ -56,6 +56,10 @@ public class TableColumnDefinition {
         }
         return getBaseType();
     }
+    
+    public StringProperty fullTypeProperty() {
+        return new SimpleStringProperty(getDataType());
+    }
 
     public String toSqlDefinition() {
         StringBuilder sb = new StringBuilder();
