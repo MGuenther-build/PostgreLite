@@ -522,12 +522,12 @@ public class QueryController {
 
         FadeTransition fadeIn = new FadeTransition(Duration.millis(1000), toast);
         fadeIn.setFromValue(0);
-        fadeIn.setToValue(0.9);
+        fadeIn.setToValue(1);
         
-        // Meldung automatisch nach 5 Sek. weg
+        // Meldung automatisch nach 5 Sek. ausfaden
         PauseTransition pause = new PauseTransition(Duration.seconds(5));
         FadeTransition fadeOutAuto = new FadeTransition(Duration.millis(1000), toast);
-        fadeOutAuto.setFromValue(0.9);
+        fadeOutAuto.setFromValue(1);
         fadeOutAuto.setToValue(0);
         fadeOutAuto.setOnFinished(e -> toastPane.getChildren().remove(toast));
         
