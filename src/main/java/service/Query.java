@@ -131,6 +131,25 @@ public class Query {
 	            next.printStackTrace();
 	        }
 	    }
+    }  
+    
+    
+    
+    public boolean tableExists(String dbName, String tableName) throws SQLException {
+        String sql = "SELECT EXISTS (" +
+                     "SELECT FROM information_schema.tables " +
+                     "WHERE table_schema = 'public' AND table_name = ?" +
+                     ")";
+        try (Connection conn = ConnectionManager.getConnection(dbName);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, tableName);
+            try (ResultSet result = stmt.executeQuery()) {
+                if (result.next()) {
+                    return result.getBoolean(1);
+                }
+            }
+        }
+        return false;
     }
     
     
@@ -166,25 +185,6 @@ public class Query {
         }
 
         return types;
-    }
-
-    
-    
-    public boolean tableExists(String dbName, String tableName) throws SQLException {
-        String sql = "SELECT EXISTS (" +
-                     "SELECT FROM information_schema.tables " +
-                     "WHERE table_schema = 'public' AND table_name = ?" +
-                     ")";
-        try (Connection conn = ConnectionManager.getConnection(dbName);
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, tableName);
-            try (ResultSet result = stmt.executeQuery()) {
-                if (result.next()) {
-                    return result.getBoolean(1);
-                }
-            }
-        }
-        return false;
     }
        
     

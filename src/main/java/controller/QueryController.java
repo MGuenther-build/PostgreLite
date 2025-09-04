@@ -248,7 +248,7 @@ public class QueryController {
     
     
     
-    // Methodenüberladung (zweite buildTable) für Excel-Import für ResultSetMetaData
+    // Methodenüberladung (zweiter buildTable) für Excel-Import für ResultSetMetaData
     private void buildTable(List<Map<String, Object>> rows) {
         resultTable.getColumns().clear();
         resultTable.getItems().clear();
