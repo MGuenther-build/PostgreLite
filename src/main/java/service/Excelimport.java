@@ -30,7 +30,7 @@ public class Excelimport {
 
 	        for (int col = startCol; col < headerRow.getLastCellNum(); col++) {
 	            Cell cell = headerRow.getCell(col);
-	            String header = cell != null ? String.valueOf(getCellValue(cell)) : "Spalte_" + col;
+	            String header = cell != null ? String.valueOf(getCellValue(cell)).trim() : "Spalte_" + col;
 	            columnNames.add(header);
 	            sqlTypes.add("TEXT"); // default
 	        }

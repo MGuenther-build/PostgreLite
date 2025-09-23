@@ -120,11 +120,10 @@ public class Query {
             .map(k -> "?").collect(Collectors.joining(", "));
 
         String sql = "INSERT INTO " + tableName + " (" + columns + ") VALUES (" + placeholders + ")";
-
-        System.out.println("SQL: " + sql);
-        for (Map<String, Object> row : rows) {
-            System.out.println("Row: " + row);
-        }
+        // System.out.println("SQL: " + sql);
+        // for (Map<String, Object> row : rows) {
+            // System.out.println("Row: " + row);
+        // }
         
         try (Connection conn = ConnectionManager.getConnection(dbName);
              PreparedStatement stmt = conn.prepareStatement(sql)) {

@@ -103,7 +103,7 @@ public class Normalizer {
 	                Instant instant = utilDate.toInstant();
 	                return LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
 	            } catch (UnsupportedOperationException e) {
-	                return utilDate.toString(); // Fallback
+	                return utilDate.toString();
 	            }
 	        }
 	        return value;

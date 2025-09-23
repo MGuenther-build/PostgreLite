@@ -231,7 +231,7 @@ public class QueryController {
                         setStyle("");
                         return;
                     }
-                    setText(Formatter.format(item));
+                    setText(Formatter.format(item, colName));
 
                     if (item instanceof Boolean) {
                         setStyle("-fx-alignment: CENTER;");

@@ -34,7 +34,6 @@ import javafx.stage.Window;
 import controller.DBConfigController;
 import service.Excelimport;
 import service.QueryResult;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -104,7 +103,8 @@ public class PopupManager {
         header4.setStyle("-fx-underline: true; -fx-font-weight: bold; -fx-font-size: 18px; -fx-fill: black;");
 
         Text body4 = new Text("In diesem Bereich können Sie aus den Datenbanken Ihre Datenbank wählen, die in ihr vorhandenen Tabellen einsehen und anschließend freihändig fast jede Art von Datenabfrage und Datenbearbeitung durchführen. Es ist in diesem Bereich nicht möglich Strukturbefehle wie Delete, Drop und Truncate durchzuführen oder Nutzer anlegen bzw. Nutzerrechte auszusprechen. Dafür bitte den Adminbereich nutzen!\n\n"
-                + "Bitte beachten Sie, dass aus Sicherheitsgründen (SQL-Injektion!) Befehle ohne \";\" (= Semikolon) zu beenden sind.\n\n"
+        		+ "Bitte denken Sie daran, dass Spaltennamen, die mit Großbuchstaben beginnen, ebenfalls in Anführungsstriche gesetzt werden müssen, damit sie Postgre finden kann, z.B. insert into tabellennamen (\"ID\", \"Nummer\") und nicht (ID, Nummer)!\n\n"
+                + "Bitte beachten Sie auch, dass aus Sicherheitsgründen (SQL-Injektion!) Befehle ohne \";\" (= Semikolon) zu beenden sind.\n\n"
         		+"Ein Import von Excel und ein Export der SQL-Ausgabe in Excel oder CSV ist möglich.\n\n");
         body4.setStyle("-fx-font-size: 16px; -fx-fill: black;");
 
@@ -386,7 +386,7 @@ public class PopupManager {
                 for (Map<String, Object> row : rawData) {
                     Map<String, String> stringRow = new LinkedHashMap<>();
                     for (Map.Entry<String, Object> entry : row.entrySet()) {
-                        stringRow.put(entry.getKey(), entry.getValue() != null ? entry.getValue().toString() : "");
+                        stringRow.put(entry.getKey(), Formatter.format(entry.getValue(), entry.getKey()));
                     }
                     data.add(stringRow);
                 }
