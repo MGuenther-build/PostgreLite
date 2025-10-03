@@ -14,7 +14,7 @@
 			>
 	
 			<top>
-				<Label text="Postgre-Dashboard" styleClass="banner" BorderPane.alignment="CENTER"/>
+				<Label text="PostgreLite" styleClass="banner" BorderPane.alignment="CENTER"/>
 			</top>
 			
 			<right>

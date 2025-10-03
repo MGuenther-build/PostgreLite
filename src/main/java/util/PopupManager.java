@@ -83,7 +83,7 @@ public class PopupManager {
         Text header1 = new Text("Dashboard\n");
         header1.setStyle("-fx-underline: true; -fx-font-weight: bold; -fx-font-size: 18px; -fx-fill: black;");
 
-        Text body1 = new Text("Das Dashboard ist der zentrale Platz, in dem Sie alle Funktionen der App sehen und aufrufen können.\n\n");
+        Text body1 = new Text("Das Dashboard (aka Startseite) ist der zentrale Platz, in dem Sie alle Funktionen der App sehen und aufrufen können.\n\n");
         body1.setStyle("-fx-font-size: 16px; -fx-fill: black;");
 
         Text header2 = new Text("Datenbank erstellen\n");

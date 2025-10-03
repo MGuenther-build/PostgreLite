@@ -29,26 +29,62 @@ public class TableColumnDefinition {
     }
 
     // Getter für TableView-Bindung
-    public StringProperty columnNameProperty() { return columnName; }
-    public StringProperty baseTypeProperty() { return baseType; }
-    public StringProperty typeParameterProperty() { return typeParameter; }
-    public BooleanProperty notNullProperty() { return notNull; }
-    public BooleanProperty primaryKeyProperty() { return primaryKey; }
-    public BooleanProperty uniqueProperty() { return unique; }
-    public StringProperty defaultValueProperty() { return defaultValue; }
-    public StringProperty checkConstraintProperty() { return checkConstraint; }
-    public StringProperty optionsProperty() { return options; }
+    public StringProperty columnNameProperty() { 
+    	return columnName; 
+    	}
+    public StringProperty baseTypeProperty() { 
+    	return baseType; 
+    	}
+    public StringProperty typeParameterProperty() { 
+    	return typeParameter; 
+    	}
+    public BooleanProperty notNullProperty() { 
+    	return notNull; 
+    	}
+    public BooleanProperty primaryKeyProperty() { 
+    	return primaryKey; 
+    	}
+    public BooleanProperty uniqueProperty() { 
+    	return unique; 
+    	}
+    public StringProperty defaultValueProperty() { 
+    	return defaultValue; 
+    	}
+    public StringProperty checkConstraintProperty() { 
+    	return checkConstraint; 
+    	}
+    public StringProperty optionsProperty() { 
+    	return options; 
+    	}
 
     // Getter für Logik
-    public String getColumnName() { return columnName.get(); }
-    public String getBaseType() { return baseType.get(); }
-    public String getTypeParameter() { return typeParameter.get(); }
-    public boolean isNotNull() { return notNull.get(); }
-    public boolean isPrimaryKey() { return primaryKey.get(); }
-    public boolean isUnique() { return unique.get(); }
-    public String getDefaultValue() { return defaultValue.get(); }
-    public String getCheckConstraint() { return checkConstraint.get(); }
-    public String getOptions() { return options.get(); }
+    public String getColumnName() { 
+    	return columnName.get(); 
+    	}
+    public String getBaseType() { 
+    	return baseType.get(); 
+    	}
+    public String getTypeParameter() { 
+    	return typeParameter.get(); 
+    	}
+    public boolean isNotNull() { 
+    	return notNull.get(); 
+    	}
+    public boolean isPrimaryKey() { 
+    	return primaryKey.get(); 
+    	}
+    public boolean isUnique() { 
+    	return unique.get(); 
+    	}
+    public String getDefaultValue() { 
+    	return defaultValue.get(); 
+    	}
+    public String getCheckConstraint() { 
+    	return checkConstraint.get(); 
+    	}
+    public String getOptions() { 
+    	return options.get(); 
+    	}
 
     public String getDataType() {
         if (getTypeParameter() != null && !getTypeParameter().isEmpty()) {
@@ -85,7 +121,6 @@ public class TableColumnDefinition {
         if (getOptions() != null && !getOptions().isEmpty()) {
             sb.append(" ").append(getOptions());
         }
-
         return sb.toString();
     }
 }

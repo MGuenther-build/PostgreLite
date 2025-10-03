@@ -38,7 +38,7 @@ public class Main extends Application {
         scene.getStylesheets().add(getClass().getResource("/css/sql-highlighting.css").toExternalForm());
         primaryStage.setScene(scene);
         primaryStage.setMaximized(true);
-        primaryStage.setTitle("PostgreSQL-Dashboard");
+        primaryStage.setTitle("PostgreLite");
         primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/icons/icon_all.png")));
         primaryStage.show();
         
@@ -55,7 +55,7 @@ public class Main extends Application {
 
             Optional<ButtonType> result = alert.showAndWait();
             if (result.isPresent() && result.get() != yesButton) {
-                event.consume(); // verhindert das Schließen
+                event.consume();
             }
         });
 
