@@ -3,7 +3,6 @@
 **PostgreLite** ist ein Java-basierter PostgreSQL-Client, der die Verwaltung von Datenbanken, Tabellen und Daten besonders komfortabel und sicher gestaltet. Die Anwendung richtet sich sowohl an Einsteiger als auch an fortgeschrittene Nutzer und bietet eine intuitive Oberfläche mit Drag&Drop-Funktionalität, Expertenmodi, sowie einem PowerShell-inspirierten Adminbereich.
 Ziel war es, eine Anwendung zu entwickeln, die mit wenigen Klicks produktiv macht — ohne auf Sicherheit, Flexibilität oder Transparenz zu verzichten.
 
-
 ## Features
 - **Datenbanken erstellen mit einem Klick**: Schnell und unkompliziert neue PostgreSQL-Datenbanken anlegen — direkt aus der Oberfläche heraus.
 - **Tabellen erstellen in zwei Modi**:
@@ -69,7 +68,7 @@ Ziel war es, eine Anwendung zu entwickeln, die mit wenigen Klicks produktiv mach
 # Lizenz
 Diese App unterliegt der MIT-Lizenz. Sie kann von Jedem herunterladen oder geklont werden und dann natürlich auch verändert/erweitert werden! Ich bin dann allerdings nicht mehr Teil solcher Projekte.
 
-# Autoren
+# Autor
 Martin Günther
 
 # Link zum Projekt
