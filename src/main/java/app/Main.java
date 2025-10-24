@@ -20,7 +20,6 @@ import controller.DBConfigController;
 
 public class Main extends Application {
 
-    // Globales Root für View-Wechsel (siehe ViewSwitcher)
     public static StackPane rootPane;
 
     @Override
@@ -76,41 +75,54 @@ public class Main extends Application {
             alert.setContentText("Anmeldung nicht abgeschlossen! Möchten Sie das Programm wirklich beenden?");
 
             ButtonType retryButton = new ButtonType("Erneut anmelden");
+            ButtonType skipButton = new ButtonType("Jetzt nicht");
             ButtonType exitButton = new ButtonType("Beenden");
 
-            alert.getButtonTypes().setAll(retryButton, exitButton);
+            alert.getButtonTypes().setAll(retryButton, skipButton, exitButton);
 
             Optional<ButtonType> result = alert.showAndWait();
-            if (result.isPresent() && result.get() == retryButton) {
-                // Popup Config nochmal öffnen
-                while (true) {
-                    FXMLLoader loader2 = new FXMLLoader(getClass().getResource("/gui_views/db_config.fxml"));
-                    Parent configView2 = loader2.load();
-                    DBConfigController controller2 = loader2.getController();
+            if (result.isPresent()) {
+            	if (result.get() == retryButton) {
+            		// Popup Config nochmal öffnen
+	                while (true) {
+	                    FXMLLoader loader2 = new FXMLLoader(getClass().getResource("/gui_views/db_config.fxml"));
+	                    Parent configView2 = loader2.load();
+	                    DBConfigController controller2 = loader2.getController();
 
-                    Stage configStage2 = new Stage();
-                    configStage2.setScene(new Scene(configView2));
-                    configStage2.initModality(Modality.APPLICATION_MODAL);
-                    configStage2.setTitle("In PostgreSQL anmelden");
-                    configStage2.showAndWait();
-
-                    if (controller2.isConfigSuccessful()) {
-                        break;
-                    } else {
-                        Alert retryAlert = new Alert(Alert.AlertType.CONFIRMATION);
-                        retryAlert.setTitle("Konfiguration fehlgeschlagen");
-                        retryAlert.setHeaderText(null);
-                        retryAlert.setContentText("Anmeldung nicht abgeschlossen! Möchten Sie das Programm wirklich beenden?");
-                        retryAlert.getButtonTypes().setAll(retryButton, exitButton);
-
-                        Optional<ButtonType> retryResult = retryAlert.showAndWait();
-                        if (!(retryResult.isPresent() && retryResult.get() == retryButton)) {
-                            System.exit(0);
-                        }
-                    }
-                }
-            } else {
-                System.exit(0);
+	                    Stage configStage2 = new Stage();
+	                    configStage2.setScene(new Scene(configView2));
+	                    configStage2.initModality(Modality.APPLICATION_MODAL);
+	                    configStage2.setTitle("In PostgreSQL anmelden");
+	                    configStage2.showAndWait();
+	
+	                    if (controller2.isConfigSuccessful()) {
+	                        break;
+	                    } else {
+	                        Alert retryAlert = new Alert(Alert.AlertType.CONFIRMATION);
+	                        retryAlert.setTitle("Konfiguration fehlgeschlagen");
+	                        retryAlert.setHeaderText(null);
+	                        retryAlert.setContentText("Anmeldung nicht abgeschlossen! Möchten Sie das Programm wirklich beenden?");
+	                        retryAlert.getButtonTypes().setAll(retryButton, exitButton);
+	
+	                        Optional<ButtonType> retryResult = retryAlert.showAndWait();
+	                        if (!(retryResult.isPresent() && retryResult.get() == retryButton)) {
+	                            System.exit(0);
+	                        }
+	                    }
+	                }
+            	} else if (result.get() == skipButton) {
+            		controller.setConfigSkipped(true);
+            	} else {
+            		System.exit(0);
+            	}
+            }
+            
+            if (controller.isConfigSkipped()) {
+                Alert infoAlert = new Alert(Alert.AlertType.INFORMATION);
+                infoAlert.setTitle("Keine Verbindung aktiv");
+                infoAlert.setHeaderText(null);
+                infoAlert.setContentText("Es besteht aktuell keine Verbindung zu einer Datenbank!");
+                infoAlert.showAndWait();
             }
         }
     }

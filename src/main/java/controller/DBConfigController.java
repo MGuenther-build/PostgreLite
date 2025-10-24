@@ -19,9 +19,19 @@ public class DBConfigController {
     private PasswordField passwordField;
 
     private boolean success = false;
+    
+    private boolean configSkipped = false;
 
     public boolean isConfigSuccessful() {
         return success;
+    }
+    
+    public boolean isConfigSkipped() {
+    	return configSkipped;
+    }
+    
+    public void setConfigSkipped(boolean skipped) {
+    	this.configSkipped = skipped;
     }
 
     @FXML

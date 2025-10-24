@@ -13,6 +13,12 @@ public class ConnectionManager {
     private static String user;
     private static String password;
     
+    public static boolean isConfigured() {
+        return host != null && !host.isBlank()
+            && port != null && !port.isBlank()
+            && user != null && !user.isBlank()
+            && password != null && !password.isBlank();
+    }
     
     public static void testConnection(String host, String port, String user, String password, String dbName) throws SQLException {
         String url = dbName == null || dbName.isBlank()

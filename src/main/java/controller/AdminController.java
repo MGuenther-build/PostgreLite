@@ -64,6 +64,10 @@ public class AdminController {
         
         // aktueller Pfad in Konsole
         Platform.runLater(() -> {
+        	if (!ConnectionManager.isConfigured()) {
+        		appendToConsole("Keine Verbindung aktiv! Konfiguration überprüfen!", Color.ORANGE);
+        		return;
+        	}
             try (Connection conn = ConnectionManager.getConnection(Session.selectedDatabase);
                  Statement stmt = conn.createStatement();
                  ResultSet rs = stmt.executeQuery("SELECT current_database();")) {
