@@ -75,7 +75,7 @@ public class Main extends Application {
             alert.setContentText("Anmeldung nicht abgeschlossen! Möchten Sie das Programm wirklich beenden?");
 
             ButtonType retryButton = new ButtonType("Erneut anmelden");
-            ButtonType skipButton = new ButtonType("Jetzt nicht");
+            ButtonType skipButton = new ButtonType("Ohne Konfiguration weiter");
             ButtonType exitButton = new ButtonType("Beenden");
 
             alert.getButtonTypes().setAll(retryButton, skipButton, exitButton);

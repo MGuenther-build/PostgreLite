@@ -5,6 +5,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
+import service.ConnectionManager;
 import service.Database;
 import util.Session;
 import util.ViewSwitcher;
@@ -27,6 +28,11 @@ public class CreateDBController {
 
     @FXML
     public void createDatabase() {
+    	if (!ConnectionManager.isConfigured()) {
+            showAlert(Alert.AlertType.ERROR, "Keine Verbindung", "Keine Konfiguration vorhanden.");
+            return;
+        }
+
         String dbName = dbNameField.getText().trim();
 
         if (dbName.isEmpty()) {

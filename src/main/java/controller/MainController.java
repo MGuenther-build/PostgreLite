@@ -1,6 +1,8 @@
 package controller;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
+import service.ConnectionManager;
 import util.ViewSwitcher;
 import util.PopupManager;
 
@@ -15,16 +17,28 @@ public class MainController {
 
     @FXML
     public void createDatabase() {
+        if (!ConnectionManager.isConfigured()) {
+            showBlockedAlert("Datenbank erstellen");
+            return;
+        }
         ViewSwitcher.switchTo("/gui_views/createDB.fxml");
     }
 
     @FXML
     public void createTable() {
+        if (!ConnectionManager.isConfigured()) {
+            showBlockedAlert("Tabelle erstellen");
+            return;
+        }
         ViewSwitcher.switchTo("/gui_views/createTable.fxml");
     }
 
     @FXML
     public void editDatabase() {
+        if (!ConnectionManager.isConfigured()) {
+            showBlockedAlert("QueryTool");
+            return;
+        }
         ViewSwitcher.switchTo("/gui_views/queryTool.fxml");
     }
     
@@ -51,5 +65,13 @@ public class MainController {
     @FXML
     public void AdminZone() {
         PopupManager.openAdminZone();
+    }
+    
+    private void showBlockedAlert(String funktion) {
+        Alert alert = new Alert(Alert.AlertType.WARNING);
+        alert.setTitle("Kein Zugriff");
+        alert.setHeaderText(null);
+        alert.setContentText("\"" + funktion + "\" ist ohne Datenbankkonfiguration nicht verfügbar.");
+        alert.showAndWait();
     }
 }
