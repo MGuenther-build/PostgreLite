@@ -64,6 +64,9 @@ Ziel war es, eine Anwendung zu entwickeln, die mit wenigen Klicks produktiv mach
 * RichTextFX (Editor-Komponente)
 * Log4j (Logging)
 
+# Responsivität
+Dieses Programm ist für aktuell üblichen Bildschirmauflösungen (1920x1080 - 3840x2400) responsiv. Es ist aber nicht für die Handynutzung geeignet.
+
 
 # Lizenz
 Diese App unterliegt der MIT-Lizenz. Sie kann von Jedem herunterladen oder geklont werden und dann natürlich auch verändert/erweitert werden! Ich bin dann allerdings nicht mehr Teil solcher Projekte.
