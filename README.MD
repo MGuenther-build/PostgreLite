@@ -1,5 +1,7 @@
 # PostgreLite
 
+![Startseite](https://www.mguenther-build.de/static/projects/PGApp1.webp)
+
 **PostgreLite** ist ein Java-basierter PostgreSQL-Client, der die Verwaltung von Datenbanken, Tabellen und Daten besonders komfortabel und sicher gestaltet. Die Anwendung richtet sich sowohl an Einsteiger als auch an fortgeschrittene Nutzer und bietet eine intuitive Oberfläche mit Drag&Drop-Funktionalität, Expertenmodi, sowie einem PowerShell-inspirierten Adminbereich.
 Ziel war es, eine Anwendung zu entwickeln, die mit wenigen Klicks produktiv macht — ohne auf Sicherheit, Flexibilität oder Transparenz zu verzichten.
 
@@ -46,6 +48,8 @@ Ziel war es, eine Anwendung zu entwickeln, die mit wenigen Klicks produktiv mach
    Main.java
    ```
 
+![Beispielbild](https://www.mguenther-build.de/static/projects/PGApp2.webp)
+
 # Nutzung
 * PostgreSQL-Konfiguration in der App hinterlegen
 * Benutzer erstellen oder anmelden
@@ -54,6 +58,7 @@ Ziel war es, eine Anwendung zu entwickeln, die mit wenigen Klicks produktiv mach
 * Daten importieren, abfragen oder exportieren
 * Bei Bedarf in den Adminbereich wechseln
 
+![Beispielbild](https://www.mguenther-build.de/static/projects/PGApp4.webp)
 
 # Technologie
 * Java
